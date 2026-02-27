@@ -51,7 +51,7 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="flex items-center gap-3 max-w-5xl mx-auto px-5 py-5">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-linear-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center shrink-0">
             <span className="text-lg font-bold text-white">CS</span>
           </div>
           <div>
@@ -102,7 +102,7 @@ export default function Dashboard() {
                       >
                         View details →
                       </a>
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-10 h-10 bg-linear-to-br from-indigo-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         {card.points}
                       </div>
                     </div>

@@ -13,10 +13,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-purple-700 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-indigo-500 via-purple-500 to-purple-700 px-4">
       <div className="bg-white rounded-lg p-10 w-full max-w-md shadow-2xl">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 mx-auto mb-5 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-5 bg-linear-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center">
             <span className="text-2xl font-bold text-white">CS</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">CoffeeShop</h1>
@@ -62,7 +62,7 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full mt-2 py-3 bg-gradient-to-r from-indigo-500 to-purple-700 text-white rounded-lg font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full mt-2 py-3 bg-linear-to-r from-indigo-500 to-purple-700 text-white rounded-lg font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
           >
             Log in
           </button>
