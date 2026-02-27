@@ -3,41 +3,11 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
+import { cards } from "../data/cards";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
-
-  const [cards] = useState([
-    {
-      id: 1,
-      name: "MAZO",
-      address: "Strada Deals Groeului nr. 12",
-      image:
-        "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=400&h=300&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Bean & Bloom",
-      address: "Strada Lalelelor 45, Bucuresti",
-      image:
-        "https://images.unsplash.com/photo-1495474472645-4022a926f25a?w=400&h=300&fit=crop",
-    },
-    {
-      id: 3,
-      name: "Urban Roast",
-      address: "Calea Victoriei 210, Bucuresti",
-      image:
-        "https://images.unsplash.com/photo-1559056199-641a0ac8b3f7?w=400&h=300&fit=crop",
-    },
-    {
-      id: 4,
-      name: "Morning Grind",
-      address: "Bulevardul Unirii 75, Bucuresti",
-      image:
-        "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=400&h=300&fit=crop",
-    },
-  ]);
 
   const handleCardClick = (cardId) => {
     navigate(`/card/${cardId}`);

@@ -5,7 +5,7 @@ export default function LoyaltyPoints({ currentPoints = 5, maxPoints = 6 }) {
         <h3 className="text-sm font-bold text-indigo-500 uppercase tracking-wide">
           Loyalty Card
         </h3>
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+        <div className="w-10 h-10 bg-linear-to-br from-indigo-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
           ☕
         </div>
       </div>
