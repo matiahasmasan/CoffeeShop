@@ -28,19 +28,6 @@ export default function LoyaltyCard({ card, onCardClick }) {
         <p className="text-xs text-gray-500 mb-4 leading-relaxed">
           {card.address}
         </p>
-        <div className="flex items-center justify-between">
-          <a
-            href="#details"
-            className="text-xs text-indigo-500 font-semibold hover:text-purple-700 transition-colors"
-          >
-            View details →
-          </a>
-          {card.points && (
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-              {card.points}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
