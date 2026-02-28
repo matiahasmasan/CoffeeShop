@@ -8,8 +8,8 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // For now, just redirect to dashboard
-    navigate("/dashboard");
+    // For now, just redirect to home
+    navigate("/home");
   };
 
   return (

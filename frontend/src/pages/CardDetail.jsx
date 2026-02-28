@@ -2,7 +2,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyPoints from "../components/LoyaltyPoints";
-import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { getCardById } from "../data/cards";
@@ -10,7 +9,6 @@ import { getCardById } from "../data/cards";
 export default function CardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("home");
 
   const card = getCardById(id);
 
@@ -21,7 +19,7 @@ export default function CardDetail() {
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-500">Card not found</p>
         </div>
-        <Footer activeTab={activeTab} onTabChange={setActiveTab} />
+        <Footer />
       </div>
     );
   }
@@ -37,7 +35,7 @@ export default function CardDetail() {
             <span className="font-bold text-gray-900">CoffeeShop</span>
           </div>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/home")}
             className="flex items-center gap-2 text-sm text-indigo-500 hover:text-purple-700 transition-colors"
           >
             <FontAwesomeIcon icon={faArrowLeft} />
@@ -96,7 +94,7 @@ export default function CardDetail() {
         </div>
       </div>
 
-      <Footer activeTab={activeTab} onTabChange={setActiveTab} />
+      <Footer />
     </div>
   );
 }
