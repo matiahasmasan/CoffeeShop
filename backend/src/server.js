@@ -5,7 +5,24 @@ require('dotenv').config();
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
+
+let mysql = require('mysql');
+
+let con = mysql.createConnection({
+  host:"localhost",
+  user:"root",
+  password:"",
+  database:"loyaltyCards"
+})
+
+con.connect(function(err){
+  if(err){
+    console.error("Eroare la conectare: " + err.message);
+    return;
+  }
+  console.log("Conectat cu succes la baza de date MySQL!");
+});
 
 app.use(cors());
 app.use(express.json());
