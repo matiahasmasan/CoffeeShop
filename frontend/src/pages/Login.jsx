@@ -6,10 +6,22 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // For now, just redirect to dashboard
-    navigate("/dashboard");
+  
+    const response = await fetch('http://localhost:5000/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: emailInput, parola: parolaInput })
+    });
+
+    const data = await response.json();
+
+  if (data.succes) {
+    navigate("/dashboard")
+  } else {
+    alert(data.mesaj); 
+  }
   };
 
   return (
@@ -70,12 +82,12 @@ export default function Login() {
 
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{" "}
-          <a
-            href="#signup"
-            className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors"
-          >
-            Sign up
-          </a>
+          <span
+              onClick={() => navigate('/register')}
+              className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors cursor-pointer"
+            >
+              Sign up
+      </span>
         </p>
       </div>
     </div>
