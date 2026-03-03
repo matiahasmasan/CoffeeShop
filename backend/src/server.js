@@ -5,8 +5,12 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import mysql from "mysql";
+import jwt from "jsonwebtoken";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -46,7 +50,18 @@ app.post("/api/login", async (req, res) => {
       const passwordMatch = await bcrypt.compare(password, user.password);
 
       if (passwordMatch) {
-        res.json({ succes: true, mesaj: "Te-ai logat!", user: result[0] });
+        const token = jwt.sign(
+          { id: user.id, email: user.email },
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" }
+        );
+
+        return res.json({ 
+          succes: true, 
+          mesaj: "Te-ai logat!", 
+          token,
+          user: { id: user.id, email: user.email }
+        });
       } else {
         res
           .status(401)
