@@ -1,3 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
+
 export default function LoyaltyCard({ card, onCardClick }) {
   const handleClick = () => {
     onCardClick(card.id);
@@ -22,12 +25,44 @@ export default function LoyaltyCard({ card, onCardClick }) {
         style={{ backgroundImage: `url(${card.background_url})` }}
       >
         <div className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors" />
+        {card.logo_url && (
+          <div className="absolute top-3 right-3">
+            <img
+              src={card.logo_url}
+              alt={card.name}
+              className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-lg"
+            />
+          </div>
+        )}
       </div>
       <div className="p-5">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">{card.name}</h3>
-        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-          {card.address}
-        </p>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-gray-900">{card.name}</h3>
+            <p className="text-xs text-indigo-600 font-semibold">
+              {card.category}
+            </p>
+          </div>
+        </div>
+        {card.rating && (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <FontAwesomeIcon
+                  key={i}
+                  icon={faStar}
+                  className={
+                    i < card.rating
+                      ? "text-yellow-400 text-sm"
+                      : "text-gray-300 text-sm"
+                  }
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-600">{card.rating}/5</span>
+          </div>
+        )}
+        <p className="text-xs text-gray-500 leading-relaxed">{card.address}</p>
       </div>
     </div>
   );

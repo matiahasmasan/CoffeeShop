@@ -52,10 +52,24 @@ export default function CardDetail() {
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="flex items-center justify-between max-w-5xl mx-auto px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white font-bold text-sm">CS</span>
+            {card.logo_url && (
+              <img
+                src={card.logo_url}
+                alt={card.name}
+                className="w-12 h-12 rounded-lg object-cover"
+              />
+            )}
+            {!card.logo_url && (
+              <div className="w-12 h-12 bg-linear-to-br from-indigo-500 to-purple-700 rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-sm">
+                  {card.name.substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div>
+              <span className="font-bold text-gray-900 block">{card.name}</span>
+              <span className="text-xs text-gray-500">{card.category}</span>
             </div>
-            <span className="font-bold text-gray-900">CoffeeShop</span>
           </div>
           <button
             onClick={() => navigate("/home")}
@@ -135,9 +149,9 @@ export default function CardDetail() {
             </div>
           </div>
         </div>
-      </div>
 
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }
