@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
-import { cards } from "../data/cards";
+import { getCards } from "../data/cards";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
+  const [cards, setCards] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCards = async () => {
+      setLoading(true);
+      const data = await getCards();
+      setCards(data);
+      setLoading(false);
+    };
+    fetchCards();
+  }, []);
 
   const handleCardClick = (cardId) => {
     navigate(`/card/${cardId}`);
@@ -26,15 +38,21 @@ export default function Dashboard() {
             <p className="text-gray-500 text-sm mb-8">
               Choose a coffee shop to view its loyalty card and details.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
-              {cards.map((card) => (
-                <LoyaltyCard
-                  key={card.id}
-                  card={card}
-                  onCardClick={handleCardClick}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading coffee shops...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
+                {cards.map((card) => (
+                  <LoyaltyCard
+                    key={card.id}
+                    card={card}
+                    onCardClick={handleCardClick}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 

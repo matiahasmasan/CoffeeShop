@@ -19,7 +19,7 @@ export default function LoyaltyCard({ card, onCardClick }) {
     >
       <div
         className="w-full h-44 bg-cover bg-center relative overflow-hidden"
-        style={{ backgroundImage: `url(${card.image})` }}
+        style={{ backgroundImage: `url(${card.background_url})` }}
       >
         <div className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors" />
       </div>
