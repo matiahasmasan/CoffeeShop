@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  //Verificare existenta token
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,6 +26,7 @@ export default function Login() {
     const data = await response.json();
     console.log(data);
     if (data.succes) {
+      localStorage.setItem('token', data.token);
       navigate("/dashboard");
     } else {
       alert(data.mesaj);
