@@ -89,6 +89,33 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
+app.get("/api/stores", (req, res) => {
+  const sql = "SELECT * FROM stores";
+  con.query(sql, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    res.json(result);
+  });
+});
+
+app.get("/api/stores/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM stores WHERE id = ?";
+  con.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    if (result.length > 0) {
+      res.json(result[0]);
+    } else {
+      res.status(404).json({ mesaj: "Store nu a fost gasit" });
+    }
+  });
+});
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
