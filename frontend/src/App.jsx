@@ -5,6 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import "./App.css";
+import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Map from "./pages/Map";
@@ -16,6 +17,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/map" element={<Map />} />
