@@ -8,20 +8,20 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
-    const response = await fetch('http://localhost:5000/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: emailInput, parola: parolaInput })
+
+    const response = await fetch("http://localhost:8000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: password }),
     });
 
     const data = await response.json();
-
-  if (data.succes) {
-    navigate("/dashboard")
-  } else {
-    alert(data.mesaj); 
-  }
+    console.log(data);
+    if (data.succes) {
+      navigate("/dashboard");
+    } else {
+      alert(data.mesaj);
+    }
   };
 
   return (
@@ -83,11 +83,11 @@ export default function Login() {
         <p className="text-center text-sm text-gray-500">
           Don't have an account?{" "}
           <span
-              onClick={() => navigate('/register')}
-              className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors cursor-pointer"
-            >
-              Sign up
-      </span>
+            onClick={() => navigate("/register")}
+            className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors cursor-pointer"
+          >
+            Sign up
+          </span>
         </p>
       </div>
     </div>

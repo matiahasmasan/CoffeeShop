@@ -7,6 +7,7 @@ import {
 import "./App.css";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Map from "./pages/Map";
 import Settings from "./pages/Settings";
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/home" element={<Home />} />
         <Route path="/map" element={<Map />} />
         <Route path="/settings" element={<Settings />} />
