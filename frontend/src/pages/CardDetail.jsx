@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import SocialLinks from "../components/SocialLinks";
 import LoyaltyPoints from "../components/LoyaltyPoints";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
@@ -17,6 +18,17 @@ export default function CardDetail() {
     const fetchCard = async () => {
       setLoading(true);
       const data = await getCardById(id);
+
+      // Parse links if it's a string (JSON from database)
+      if (data && typeof data.links === "string") {
+        try {
+          data.links = JSON.parse(data.links);
+        } catch (error) {
+          console.error("Error parsing links:", error);
+          data.links = null;
+        }
+      }
+
       setCard(data);
       setLoading(false);
     };
@@ -125,15 +137,10 @@ export default function CardDetail() {
             </div>
 
             <div>
-              <h3 className="font-bold text-gray-900 text-sm mb-1">Website</h3>
-              <a
-                href={card.links}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-500 hover:text-purple-700 text-sm underline"
-              >
-                {card.links}
-              </a>
+              <h3 className="font-bold text-gray-900 text-sm mb-3">
+                Follow Us
+              </h3>
+              <SocialLinks links={card.links} />
             </div>
 
             <div>
