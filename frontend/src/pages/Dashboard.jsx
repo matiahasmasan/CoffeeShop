@@ -10,7 +10,10 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("home");
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const userData = localStorage.getItem("user");
+    return userData ? JSON.parse(userData) : null;
+  });
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -24,11 +27,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
     if (!token) {
       navigate("/login");
-    } else if (userData) {
-      setUser(JSON.parse(userData));
     }
   }, [navigate]);
 
