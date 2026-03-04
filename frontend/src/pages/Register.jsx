@@ -10,6 +10,10 @@ export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  const handleLoginClick = async (e) =>{
+    navigate("/login");
+  }
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -142,12 +146,12 @@ export default function Register() {
 
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}
-          <a
-            href="#login"
-            className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors"
+          <button
+            onClick={handleLoginClick} 
+            className="text-indigo-500 font-semibold hover:text-purple-700 transition-colors bg-transparent border-none p-0 cursor-pointer"
           >
             Log in
-          </a>
+          </button>
         </p>
       </div>
     </div>
