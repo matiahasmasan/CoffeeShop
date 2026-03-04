@@ -8,7 +8,7 @@ export default function Login() {
 
   //Verificare existenta token
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       navigate("/dashboard");
     }
@@ -25,7 +25,8 @@ export default function Login() {
 
     const data = await response.json();
     if (data.succes) {
-      localStorage.setItem('token', data.token);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/dashboard");
     } else {
       alert(data.mesaj);

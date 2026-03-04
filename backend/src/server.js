@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -53,14 +53,14 @@ app.post("/api/login", async (req, res) => {
         const token = jwt.sign(
           { id: user.id, email: user.email },
           process.env.JWT_SECRET,
-          { expiresIn: "1h" }
+          { expiresIn: "1h" },
         );
 
-        return res.json({ 
-          succes: true, 
-          mesaj: "Te-ai logat!", 
+        return res.json({
+          succes: true,
+          mesaj: "Te-ai logat!",
           token,
-          user: { id: user.id, email: user.email }
+          user: { id: user.id, email: user.email, firstName: user.firstName },
         });
       } else {
         res

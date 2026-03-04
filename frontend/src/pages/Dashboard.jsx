@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("home");
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -22,9 +23,12 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
     if (!token) {
       navigate("/login");
+    } else if (userData) {
+      setUser(JSON.parse(userData));
     }
   }, [navigate]);
 
@@ -33,7 +37,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
@@ -45,7 +49,7 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-3xl font-bold text-gray-900">
-                Welcome client
+                Welcome {user?.firstName || "Coffee Lover"}!
               </h2>
               <button
                 onClick={handleLogout}
