@@ -51,7 +51,7 @@ app.post("/api/login", async (req, res) => {
 
       if (passwordMatch) {
         const token = jwt.sign(
-          { id: user.id, email: user.email },
+          { id: user.id, email: user.email, role: user.role_id},
           process.env.JWT_SECRET,
           { expiresIn: "1h" },
         );
@@ -80,7 +80,7 @@ app.post("/api/register", async (req, res) => {
   try {
     const hashedPassword = await hashPassword(password);
     const sql =
-      "INSERT INTO users (firstName, lastName, email, password, phone) VALUES (?, ?, ?, ?, ?)";
+      "INSERT INTO users (role_id, firstName, lastName, email, password, phone) VALUES (1, ?, ?, ?, ?, ?)";
     con.query(
       sql,
       [firstName, lastName, email, hashedPassword, phone],
