@@ -1,9 +1,20 @@
 const API_URL = "http://localhost:8000/api";
 
 export async function getCards() {
+  const token = localStorage.getItem("token");
   try {
-    const response = await fetch(`${API_URL}/stores`);
+    const response = await fetch(`${API_URL}/stores`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        console.error("Acces refuzat la lista de magazine (Token invalid)");
+      }
       throw new Error("Failed to fetch stores");
     }
     return await response.json();
@@ -14,10 +25,21 @@ export async function getCards() {
 }
 
 export async function getCardById(id) {
+  const token = localStorage.getItem("token");
   try {
-    const response = await fetch(`${API_URL}/stores/${id}`);
+    const response = await fetch(`http://localhost:8000/api/stores/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+    });
+
     if (!response.ok) {
-      throw new Error("Failed to fetch store");
+      if (response.status === 401 || response.status === 403) {
+        console.error("Token invalid sau expirat");
+      }
+      return null;
     }
     return await response.json();
   } catch (error) {

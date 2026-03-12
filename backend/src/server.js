@@ -33,6 +33,38 @@ con.connect(function (err) {
 app.use(cors());
 app.use(express.json());
 
+// Middleware verificare token
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  
+  const token = authHeader && authHeader.startsWith('Bearer ') 
+    ? authHeader.split(' ')[1] 
+    : authHeader;
+
+  if (!token) {
+    return res.status(403).json({ mesaj: "Acces interzis. Lipseste token-ul." });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error("JWT Error:", err.message); //
+      return res.status(401).json({ mesaj: "Token invalid sau expirat." });
+    }
+    
+    req.user = decoded;
+    next();
+  });
+};
+
+// Functie creare token
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role_id },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+};
+
 async function hashPassword(password) {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
@@ -45,33 +77,30 @@ app.post("/api/login", async (req, res) => {
   con.query(sql, [email], async (err, result) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
 
-    if (result.length > 0) {
-      const user = result[0];
-      const passwordMatch = await bcrypt.compare(password, user.password);
-
-      if (passwordMatch) {
-        const token = jwt.sign(
-          { id: user.id, email: user.email },
-          process.env.JWT_SECRET,
-          { expiresIn: "1h" },
-        );
-
-        return res.json({
-          succes: true,
-          mesaj: "Te-ai logat!",
-          token,
-          user: { id: user.id, email: user.email, firstName: user.firstName },
-        });
-      } else {
-        res
-          .status(401)
-          .json({ succes: false, mesaj: "Email sau parola gresita" });
-      }
-    } else {
-      res
-        .status(401)
-        .json({ succes: false, mesaj: "Email sau parola gresita" });
+    if (result.length === 0) {
+      return res.status(401).json({ succes: false, mesaj: "Email sau parola gresita" });
     }
+
+    const user = result[0];
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ succes: false, mesaj: "Email sau parola gresita" });
+    }
+
+    const token = generateToken(user);
+
+    return res.json({
+      succes: true,
+      mesaj: "Te-ai logat!",
+      token,
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        role: user.role_id 
+      },
+    });
   });
 });
 
@@ -80,7 +109,7 @@ app.post("/api/register", async (req, res) => {
   try {
     const hashedPassword = await hashPassword(password);
     const sql =
-      "INSERT INTO users (firstName, lastName, email, password, phone) VALUES (?, ?, ?, ?, ?)";
+      "INSERT INTO users (role_id, firstName, lastName, email, password, phone) VALUES (1, ?, ?, ?, ?, ?)";
     con.query(
       sql,
       [firstName, lastName, email, hashedPassword, phone],
@@ -104,7 +133,7 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
-app.get("/api/stores", (req, res) => {
+app.get("/api/stores", verifyToken, (req, res) => {
   const sql = "SELECT * FROM stores";
   con.query(sql, (err, result) => {
     if (err) {
@@ -115,7 +144,7 @@ app.get("/api/stores", (req, res) => {
   });
 });
 
-app.get("/api/stores/:id", (req, res) => {
+app.get("/api/stores/:id", verifyToken, (req, res) => {
   const { id } = req.params;
   const sql = "SELECT * FROM stores WHERE id = ?";
   con.query(sql, [id], (err, result) => {

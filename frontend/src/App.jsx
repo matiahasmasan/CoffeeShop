@@ -4,6 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { ProtectedRoute } from "./middleware/auth.jsx"
 import "./App.css";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
@@ -19,11 +20,28 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/home" element={<Dashboard />} />
-        <Route path="/map" element={<Map />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/card/:id" element={<CardDetail />} />
+
+        <Route 
+          path="/dashboard" 
+          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+        />
+        <Route 
+          path="/home" 
+          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+        />
+        <Route 
+          path="/map" 
+          element={<ProtectedRoute><Map /></ProtectedRoute>} 
+        />
+        <Route 
+          path="/settings" 
+          element={<ProtectedRoute><Settings /></ProtectedRoute>} 
+        />
+        <Route 
+          path="/card/:id" 
+          element={<ProtectedRoute><CardDetail /></ProtectedRoute>} 
+        />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
