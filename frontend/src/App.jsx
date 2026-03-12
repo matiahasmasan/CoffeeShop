@@ -4,7 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { ProtectedRoute } from "./middleware/auth.js"
+import { ProtectedRoute } from "./middleware/auth.jsx"
 import "./App.css";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
