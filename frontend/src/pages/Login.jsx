@@ -9,8 +9,13 @@ export default function Login() {
   //Verificare existenta token
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/dashboard");
+    const userString = localStorage.getItem("user");
+    const user = userString ? JSON.parse(userString) : null;
+    if (token && user && user.role_id !== 1) {
+      navigate("/wallet");
+    }
+    else if (token && user && user.role_id === 1) {
+      navigate("/adminDashboard");
     }
   }, [navigate]);
 
@@ -27,9 +32,11 @@ export default function Login() {
     if (data.succes) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard");
-    } else {
-      alert(data.mesaj);
+      if(data.user.role_id === 2) {
+        navigate("/wallet");
+      } else {
+        navigate("/adminDashboard");
+      }
     }
   };
 

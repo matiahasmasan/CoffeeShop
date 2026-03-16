@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import { getCards } from "../data/cards";
 
-export default function Dashboard() {
+export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [cards, setCards] = useState([]);

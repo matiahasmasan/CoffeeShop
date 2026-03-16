@@ -8,10 +8,11 @@ import { ProtectedRoute } from "./middleware/auth.jsx"
 import "./App.css";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Wallet from "./pages/Wallet";
 import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 function App() {
   return (
@@ -22,12 +23,12 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route 
-          path="/dashboard" 
-          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+          path="/wallet" 
+          element={<ProtectedRoute><Wallet /></ProtectedRoute>} 
         />
         <Route 
           path="/home" 
-          element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+          element={<ProtectedRoute><Wallet /></ProtectedRoute>} 
         />
         <Route 
           path="/map" 
@@ -41,6 +42,13 @@ function App() {
           path="/card/:id" 
           element={<ProtectedRoute><CardDetail /></ProtectedRoute>} 
         />
+
+        <Route 
+          path="/adminDashboard" 
+          element={
+          <ProtectedRoute allowedRoles={[1]}>
+            <AdminDashboard />
+          </ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
