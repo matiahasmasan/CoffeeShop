@@ -19,7 +19,6 @@ export default function CardDetail() {
       setLoading(true);
       const data = await getCardById(id);
 
-      // Parse links if it's a string (JSON from database)
       if (data && typeof data.links === "string") {
         try {
           data.links = JSON.parse(data.links);
