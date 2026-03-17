@@ -24,7 +24,7 @@ function App() {
 
         <Route 
           path="/wallet" 
-          element={<ProtectedRoute><Wallet /></ProtectedRoute>} 
+          element={<ProtectedRoute allowedRoles={[2]}><Wallet /></ProtectedRoute>} 
         />
         <Route 
           path="/home" 
