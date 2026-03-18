@@ -26,6 +26,28 @@ export default function AddStore() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleImageUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8000/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mesaj || "Eroare la upload.");
+      setForm((prev) => ({ ...prev, [field]: data.url }));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -75,8 +97,6 @@ export default function AddStore() {
   const fields = [
     { name: "name", label: "Nume *", required: true },
     { name: "address", label: "Adresă *", required: true },
-    { name: "logo_url", label: "URL Logo" },
-    { name: "background_url", label: "URL Background" },
     { name: "description", label: "Descriere", textarea: true },
     { name: "hours", label: "Program (ex: Lun-Vin 08:00-22:00)" },
     { name: "phone", label: "Telefon" },
@@ -109,6 +129,39 @@ export default function AddStore() {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+            {/* Logo Upload */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Logo
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleImageUpload(e, "logo_url")}
+                className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+              />
+              {form.logo_url && (
+                <img src={form.logo_url} alt="Logo preview" className="mt-2 h-16 w-16 object-cover rounded-lg border border-gray-200" />
+              )}
+            </div>
+
+            {/* Background Upload */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Background
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleImageUpload(e, "background_url")}
+                className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+              />
+              {form.background_url && (
+                <img src={form.background_url} alt="Background preview" className="mt-2 h-24 w-full object-cover rounded-lg border border-gray-200" />
+              )}
+            </div>
+
             {fields.map(({ name, label, required, textarea, type }) => (
               <div key={name} className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">

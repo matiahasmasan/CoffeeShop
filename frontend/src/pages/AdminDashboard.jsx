@@ -39,6 +39,21 @@ export default function AdminDashboard() {
     setExpandedRow(expandedRow === idx ? null : idx);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Ești sigur că vrei să ștergi acest magazin?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8000/api/stores/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Eroare la ștergere.");
+      setStores((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const PRIMARY_KEYS = ["id", "name", "address"];
 
   return (
@@ -91,6 +106,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-3 font-semibold tracking-wider">Nume</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Adresă</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Detalii</th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">Acțiuni</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -128,11 +144,19 @@ export default function AdminDashboard() {
                               {isExpanded ? "▲ Ascunde" : "▼ Mai mult"}
                             </button>
                           </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => handleDelete(store.id)}
+                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all"
+                            >
+                              Șterge
+                            </button>
+                          </td>
                         </tr>
 
                         {isExpanded && (
                           <tr key={`details-${idx}`} className="bg-indigo-50/40">
-                            <td colSpan={4} className="px-8 py-4">
+                            <td colSpan={5} className="px-8 py-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                                 {extraEntries.length > 0 ? (
                                   extraEntries.map(([key, val]) => (

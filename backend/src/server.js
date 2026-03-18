@@ -6,9 +6,35 @@ import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import mysql from "mysql";
 import jwt from "jsonwebtoken";
+// "multer" pentru upload imagini
+import multer from "multer";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const uploadsDir = path.resolve(__dirname, "../uploads");
+
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Tip de fișier neacceptat."));
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -200,11 +226,28 @@ app.post("/api/stores", verifyToken, (req, res) => {
   });
 });
 
+app.delete("/api/stores/:id", verifyToken, (req, res) => {
+  if (req.user.role !== 1) return res.status(403).json({ mesaj: "Acces interzis." });
+  const { id } = req.params;
+  con.query("DELETE FROM stores WHERE id = ?", [id], (err) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la ștergere." });
+    res.json({ succes: true, mesaj: "Magazin șters." });
+  });
+});
+
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     message: "CoffeeShop backend is running",
   });
+});
+
+app.use("/uploads", express.static(uploadsDir));
+
+app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ mesaj: "Niciun fișier trimis." });
+  const url = `http://localhost:8000/uploads/${req.file.filename}`;
+  res.json({ url });
 });
 
 app.use((req, res, next) => {
