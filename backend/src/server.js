@@ -48,7 +48,7 @@ const verifyToken = (req, res, next) => {
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error("JWT Error:", err.message); //
-      return res.status(401).json({ mesaj: "Token invalid sau expirat." });
+      return res.status(401).json({ mesaj: "Token invalid sau expirat." , redirectUrl: "/login" });
     }
     
     req.user = decoded;
@@ -157,6 +157,46 @@ app.get("/api/stores/:id", verifyToken, (req, res) => {
     } else {
       res.status(404).json({ mesaj: "Store nu a fost gasit" });
     }
+  });
+});
+
+app.post("/api/stores", verifyToken, (req, res) => {
+  // Doar adminii (role_id 1) pot adăuga magazine
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+
+  const {
+    name, address, logo_url, background_url, description,
+    hours, phone, email, links, maps_link, rating,
+  } = req.body;
+
+  if (!name || !address) {
+    return res.status(400).json({ mesaj: "Numele și adresa sunt obligatorii." });
+  }
+
+  const sql = `
+    INSERT INTO stores 
+      (name, address, logo_url, background_url, description, hours, phone, email, links, maps_link, rating)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const values = [
+    name, address, logo_url || null, background_url || null,
+    description || null, hours || null, phone || null,
+    email || null, links || null, maps_link || null, rating || null,
+  ];
+
+  con.query(sql, values, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ mesaj: "Eroare la adăugarea magazinului." });
+    }
+    res.status(201).json({
+      succes: true,
+      mesaj: "Magazin adăugat cu succes!",
+      id: result.insertId,
+    });
   });
 });
 

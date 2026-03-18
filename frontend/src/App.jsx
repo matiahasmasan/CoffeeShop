@@ -13,6 +13,7 @@ import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import AddStore from "./pages/AddStore.jsx";
 
 function App() {
   return (
@@ -49,6 +50,13 @@ function App() {
           <ProtectedRoute allowedRoles={[1]}>
             <AdminDashboard />
           </ProtectedRoute>} />
+
+        <Route
+          path="/admin/add-store"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <AddStore />
+            </ProtectedRoute>}/>
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
