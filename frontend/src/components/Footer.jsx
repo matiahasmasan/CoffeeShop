@@ -26,6 +26,15 @@ export default function Footer() {
         }`}
         onClick={() => navigate("/map")}
       >
+         <MapIcon />
+        <span className="text-xs font-medium">Cards</span>
+      </button>
+      <button
+        className={`flex flex-col items-center gap-1.5 py-3 px-5 border-none bg-none cursor-pointer transition-colors ${
+          isActive("/settings") ? "text-indigo-500" : "text-gray-400"
+        }`}
+        onClick={() => navigate("/cards")}
+      >
         <MapIcon />
         <span className="text-xs font-medium">Map</span>
       </button>
@@ -38,6 +47,7 @@ export default function Footer() {
         <SettingsIcon />
         <span className="text-xs font-medium">Settings</span>
       </button>
+
     </div>
   );
 }

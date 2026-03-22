@@ -74,7 +74,7 @@ const verifyToken = (req, res, next) => {
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error("JWT Error:", err.message); //
-      return res.status(401).json({ mesaj: "Token invalid sau expirat." , redirectUrl: "/login" });
+      return res.status(401).json({ mesaj: "Token invalid sau expirat." });
     }
     
     req.user = decoded;
