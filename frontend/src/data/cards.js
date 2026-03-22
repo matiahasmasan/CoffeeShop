@@ -13,7 +13,10 @@ export async function getCards() {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        console.error("Acces refuzat la lista de magazine (Token invalid)");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return [];
       }
       throw new Error("Failed to fetch stores");
     }
@@ -34,7 +37,16 @@ export async function getCardById(storeId) {
         Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) return null;
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return null;
+      }
+      return null;
+    }
     return await response.json();
   } catch (error) {
     console.error("Error fetching card:", error);

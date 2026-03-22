@@ -42,6 +42,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const SERVER_START_TIME = Math.floor(Date.now() / 1000);
 
 let con = mysql.createConnection({
   host: "localhost",
@@ -78,7 +79,11 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      console.error("JWT Error:", err.message); //
+      console.error("JWT Error:", err.message);
+      return res.status(401).json({ mesaj: "Token invalid sau expirat." });
+    }
+
+    if (decoded.iat < SERVER_START_TIME) {
       return res.status(401).json({ mesaj: "Token invalid sau expirat." });
     }
 
