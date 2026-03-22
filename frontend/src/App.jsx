@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
+import QRPage from "./pages/QRPage.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/qr" element={<QRPage />} />
 
         <Route 
           path="/wallet" 

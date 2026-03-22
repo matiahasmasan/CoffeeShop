@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import HomeIcon from "./icons/HomeIcon";
-import MapIcon from "./icons/MapIcon";
 import SettingsIcon from "./icons/SettingsIcon";
 
 export default function Footer() {
@@ -22,23 +21,54 @@ export default function Footer() {
       </button>
       <button
         className={`flex flex-col items-center gap-1.5 py-3 px-5 border-none bg-none cursor-pointer transition-colors ${
-          isActive("/map") ? "text-indigo-500" : "text-gray-400"
+          isActive("/cards") ? "text-indigo-500" : "text-gray-400"
         }`}
-        onClick={() => navigate("/map")}
+        onClick={() => navigate("/cards")}
       >
-         <MapIcon />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
         <span className="text-xs font-medium">Cards</span>
       </button>
       <button
         className={`flex flex-col items-center gap-1.5 py-3 px-5 border-none bg-none cursor-pointer transition-colors ${
-          isActive("/settings") ? "text-indigo-500" : "text-gray-400"
+          isActive("/qr") ? "text-indigo-500" : "text-gray-400"
         }`}
-        onClick={() => navigate("/cards")}
+        onClick={() => navigate("/qr")}
       >
-        <MapIcon />
-        <span className="text-xs font-medium">Map</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+          <rect x="14" y="14" width="3" height="3" />
+          <line x1="18" y1="14" x2="21" y2="14" />
+          <line x1="21" y1="14" x2="21" y2="17" />
+          <line x1="18" y1="21" x2="21" y2="21" />
+        </svg>
+        <span className="text-xs font-medium">QR</span>
       </button>
-      <button
+<button
         className={`flex flex-col items-center gap-1.5 py-3 px-5 border-none bg-none cursor-pointer transition-colors ${
           isActive("/settings") ? "text-indigo-500" : "text-gray-400"
         }`}
@@ -47,7 +77,6 @@ export default function Footer() {
         <SettingsIcon />
         <span className="text-xs font-medium">Settings</span>
       </button>
-
     </div>
   );
 }
