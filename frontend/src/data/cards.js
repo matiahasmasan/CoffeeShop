@@ -13,7 +13,10 @@ export async function getCards() {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        console.error("Acces refuzat la lista de magazine (Token invalid)");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return [];
       }
       throw new Error("Failed to fetch stores");
     }
@@ -37,7 +40,10 @@ export async function getCardById(id) {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        console.error("Token invalid sau expirat");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return null;
       }
       return null;
     }
