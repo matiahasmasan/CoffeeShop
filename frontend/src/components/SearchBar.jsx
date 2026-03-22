@@ -11,7 +11,7 @@ export default function SearchBar({
           placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full md:w-96 px-5 py-3 pr-12 rounded-2xl border-2 border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all duration-200 bg-white shadow-sm"
+          className="w-full px-5 py-3 pr-12 rounded-2xl border-2 border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all duration-200 bg-white shadow-sm"
         />
         <svg
           className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-300"
