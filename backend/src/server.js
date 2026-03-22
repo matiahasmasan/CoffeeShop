@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 
 if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+  fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -31,7 +31,9 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
-    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("Tip de fișier neacceptat."));
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error("Tip de fișier neacceptat."));
   },
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
@@ -61,14 +63,17 @@ app.use(express.json());
 
 // Middleware verificare token
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  
-  const token = authHeader && authHeader.startsWith('Bearer ') 
-    ? authHeader.split(' ')[1] 
-    : authHeader;
+  const authHeader = req.headers["authorization"];
+
+  const token =
+    authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : authHeader;
 
   if (!token) {
-    return res.status(403).json({ mesaj: "Acces interzis. Lipseste token-ul." });
+    return res
+      .status(403)
+      .json({ mesaj: "Acces interzis. Lipseste token-ul." });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
@@ -76,7 +81,7 @@ const verifyToken = (req, res, next) => {
       console.error("JWT Error:", err.message); //
       return res.status(401).json({ mesaj: "Token invalid sau expirat." });
     }
-    
+
     req.user = decoded;
     next();
   });
@@ -87,7 +92,7 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role_id },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 };
 
@@ -104,14 +109,18 @@ app.post("/api/login", async (req, res) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
 
     if (result.length === 0) {
-      return res.status(401).json({ succes: false, mesaj: "Email sau parola gresita" });
+      return res
+        .status(401)
+        .json({ succes: false, mesaj: "Email sau parola gresita" });
     }
 
     const user = result[0];
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ succes: false, mesaj: "Email sau parola gresita" });
+      return res
+        .status(401)
+        .json({ succes: false, mesaj: "Email sau parola gresita" });
     }
 
     const token = generateToken(user);
@@ -120,10 +129,10 @@ app.post("/api/login", async (req, res) => {
       succes: true,
       mesaj: "Te-ai logat!",
       token,
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        firstName: user.firstName, 
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
         role_id: user.role_id,
       },
     });
@@ -193,12 +202,23 @@ app.post("/api/stores", verifyToken, (req, res) => {
   }
 
   const {
-    name, address, logo_url, background_url, description,
-    hours, phone, email, links, maps_link, rating,
+    name,
+    address,
+    logo_url,
+    background_url,
+    description,
+    hours,
+    phone,
+    email,
+    links,
+    maps_link,
+    rating,
   } = req.body;
 
   if (!name || !address) {
-    return res.status(400).json({ mesaj: "Numele și adresa sunt obligatorii." });
+    return res
+      .status(400)
+      .json({ mesaj: "Numele și adresa sunt obligatorii." });
   }
 
   const sql = `
@@ -208,15 +228,25 @@ app.post("/api/stores", verifyToken, (req, res) => {
   `;
 
   const values = [
-    name, address, logo_url || null, background_url || null,
-    description || null, hours || null, phone || null,
-    email || null, links || null, maps_link || null, rating || null,
+    name,
+    address,
+    logo_url || null,
+    background_url || null,
+    description || null,
+    hours || null,
+    phone || null,
+    email || null,
+    links || null,
+    maps_link || null,
+    rating || null,
   ];
 
   con.query(sql, values, (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ mesaj: "Eroare la adăugarea magazinului." });
+      return res
+        .status(500)
+        .json({ mesaj: "Eroare la adăugarea magazinului." });
     }
     res.status(201).json({
       succes: true,
@@ -227,7 +257,8 @@ app.post("/api/stores", verifyToken, (req, res) => {
 });
 
 app.delete("/api/stores/:id", verifyToken, (req, res) => {
-  if (req.user.role !== 1) return res.status(403).json({ mesaj: "Acces interzis." });
+  if (req.user.role !== 1)
+    return res.status(403).json({ mesaj: "Acces interzis." });
   const { id } = req.params;
   con.query("DELETE FROM stores WHERE id = ?", [id], (err) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la ștergere." });
@@ -235,17 +266,54 @@ app.delete("/api/stores/:id", verifyToken, (req, res) => {
   });
 });
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "CoffeeShop backend is running",
+// Get a specific card for the logged-in user
+app.get("/api/cards/:storeId", verifyToken, (req, res) => {
+  const { storeId } = req.params;
+  const userId = req.user.id; // from JWT token
+
+  const sql = `
+    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id
+    FROM stores s
+    LEFT JOIN loyalty_cards lc 
+      ON lc.store_id = s.id AND lc.user_id = ?
+    WHERE s.id = ?
+  `;
+
+  con.query(sql, [userId, storeId], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (result.length === 0)
+      return res.status(404).json({ mesaj: "Store not found" });
+    res.json(result[0]);
+  });
+});
+
+// Claim a card
+app.post("/api/cards/claim", verifyToken, (req, res) => {
+  const { store_id } = req.body;
+  const user_id = req.user.id;
+
+  const sql = `
+    INSERT INTO loyalty_cards (user_id, store_id, points, total_points_earned, created_at)
+    VALUES (?, ?, 0, 0, NOW())
+    ON CONFLICT (user_id, store_id) DO NOTHING
+  `;
+  // MySQL syntax:
+  const sqlMySQL = `
+    INSERT IGNORE INTO loyalty_cards (user_id, store_id, points, total_points_earned, created_at)
+    VALUES (?, ?, 0, 0, NOW())
+  `;
+
+  con.query(sqlMySQL, [user_id, store_id], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.status(201).json({ succes: true, mesaj: "Card claimed!" });
   });
 });
 
 app.use("/uploads", express.static(uploadsDir));
 
 app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ mesaj: "Niciun fișier trimis." });
+  if (!req.file)
+    return res.status(400).json({ mesaj: "Niciun fișier trimis." });
   const url = `http://localhost:8000/uploads/${req.file.filename}`;
   res.json({ url });
 });

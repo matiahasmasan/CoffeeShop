@@ -7,6 +7,7 @@ import CardMap from "../components/CardMap";
 import SocialLinks from "../components/SocialLinks";
 import LoyaltyPoints from "../components/LoyaltyPoints";
 import { getCardById } from "../data/cards";
+import { claimCard } from "../data/cards";
 
 export default function CardDetail() {
   const { id } = useParams();
@@ -83,7 +84,20 @@ export default function CardDetail() {
           }}
         />
 
-        <LoyaltyPoints currentPoints={card.points} maxPoints={6} />
+        {card.card_id ? (
+          <LoyaltyPoints currentPoints={card.points} maxPoints={6} />
+        ) : (
+          <button
+            onClick={async () => {
+              await claimCard(id);
+              const data = await getCardById(id); // refresh
+              setCard(data);
+            }}
+            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition mb-6"
+          >
+            ☕ Get Loyalty Card
+          </button>
+        )}
 
         <div className="bg-white rounded-lg p-6 mb-6">
           <p className="text-gray-700 text-sm leading-relaxed mb-6">
