@@ -9,6 +9,8 @@ import jwt from "jsonwebtoken";
 // "multer" pentru upload imagini
 import multer from "multer";
 import fs from "fs";
+import rateLimit from "express-rate-limit";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,7 +108,14 @@ async function hashPassword(password) {
   return await bcrypt.hash(password, saltRounds);
 }
 
-app.post("/api/login", async (req, res) => {
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 10,                   
+  message: { mesaj: "Prea multe încercări. Încearcă din nou după 15 minute." }
+});
+
+
+app.post("/api/login", loginLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   const sql = "SELECT * FROM users WHERE email = ?";
