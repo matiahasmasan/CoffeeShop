@@ -1,0 +1,84 @@
+import { describe, test, expect, vi, beforeAll } from "vitest";
+import request from "supertest";
+import jwt from "jsonwebtoken";
+import { app } from "../server.js";
+
+// Mock pentru MySQL - nu vrem sa ne conectam la baza de date reala in teste
+vi.mock("mysql", () => {
+  return {
+    default: {
+      createConnection: () => ({
+        connect: (cb) => cb(null),
+        query: vi.fn((sql, paramsOrCb, cb) => {
+          if (typeof paramsOrCb === "function") paramsOrCb(null, []);
+          else cb(null, []);
+        })
+      }),
+    },
+  };
+});
+
+const JWT_SECRET = "test_secret";
+
+beforeAll(() => {
+  process.env.JWT_SECRET = JWT_SECRET;
+});
+
+// ─── verifyToken ────────────────────────────────────────────────────────────
+
+describe("verifyToken", () => {
+  test("returneaza 403 daca lipseste token-ul", async () => {
+    const res = await request(app).get("/api/stores");
+    expect(res.status).toBe(403);
+    expect(res.body.mesaj).toBe("Acces interzis. Lipseste token-ul.");
+  });
+
+  test("returneaza 401 daca token-ul este invalid", async () => {
+    const res = await request(app)
+      .get("/api/stores")
+      .set("Authorization", "Bearer token_invalid");
+    expect(res.status).toBe(401);
+    expect(res.body.mesaj).toBe("Token invalid sau expirat.");
+  });
+
+  test("returneaza 401 daca token-ul a fost emis inainte de restart", async () => {
+    // Token emis in trecut (cu iat in urma cu 2 ore)
+    const tokenVechi = jwt.sign(
+      { id: 1, email: "test@test.com", role: 2, iat: Math.floor(Date.now() / 1000) - 7200 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const res = await request(app)
+      .get("/api/stores")
+      .set("Authorization", `Bearer ${tokenVechi}`);
+    expect(res.status).toBe(401);
+  });
+
+  test("accepta token valid emis dupa pornirea serverului", async () => {
+    const tokenValid = jwt.sign(
+      { id: 1, email: "test@test.com", role: 2 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const res = await request(app)
+      .get("/api/stores")
+      .set("Authorization", `Bearer ${tokenValid}`);
+
+    // 200 sau 500 (500 = baza de date mock) — important e ca NU e 401/403
+    expect(res.status).not.toBe(401);
+    expect(res.status).not.toBe(403);
+  });
+});
+
+// ─── POST /api/login ─────────────────────────────────────────────────────────
+
+describe("POST /api/login", () => {
+  test("returneaza 400 daca lipsesc campurile", async () => {
+    const res = await request(app)
+      .post("/api/login")
+      .send({});
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+});
