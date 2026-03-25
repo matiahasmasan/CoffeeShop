@@ -81,4 +81,15 @@ describe("POST /api/login", () => {
       .send({});
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
+
+  test("blocheaza dupa 10 incercari cu 429", async () => {
+    for (let i = 0; i < 10; i++) {
+      await request(app)
+        .post("/api/login")
+        .send({});}
+      const res = await request(app)
+        .post("/api/login")
+        .send({});
+      expect(res.status).toBe(429);
+  });
 });
