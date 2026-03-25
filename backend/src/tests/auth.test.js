@@ -72,6 +72,41 @@ describe("verifyToken", () => {
   });
 });
 
+// ─── GET /api/qr-token ───────────────────────────────────────────────────────
+
+describe("GET /api/qr-token", () => {
+  test("returneaza qr_token cu token valid", async () => {
+    const tokenValid = jwt.sign(
+      { id: 5, email: "test@test.com", role: 2 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const res = await request(app)
+      .get("/api/qr-token")
+      .set("Authorization", `Bearer ${tokenValid}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.qr_token).toBeDefined();
+  });
+
+  test("qr_token contine type: qr si userId corect", async () => {
+    const tokenValid = jwt.sign(
+      { id: 5, email: "test@test.com", role: 2 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const res = await request(app)
+      .get("/api/qr-token")
+      .set("Authorization", `Bearer ${tokenValid}`);
+
+    const decoded = jwt.verify(res.body.qr_token, JWT_SECRET);
+    expect(decoded.type).toBe("qr");
+    expect(decoded.userId).toBe(5);
+  });
+});
+
 // ─── POST /api/login ─────────────────────────────────────────────────────────
 
 describe("POST /api/login", () => {
@@ -86,8 +121,9 @@ describe("POST /api/login", () => {
     for (let i = 0; i < 10; i++) {
       await request(app)
         .post("/api/login")
-        .send({});}
-      const res = await request(app)
+        .send({});
+    }
+    const res = await request(app)
         .post("/api/login")
         .send({});
       expect(res.status).toBe(429);

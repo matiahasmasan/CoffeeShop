@@ -332,6 +332,16 @@ app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {
   res.json({ url });
 });
 
+app.get("/api/qr-token", verifyToken, (req, res) => {
+  const qrToken = jwt.sign(
+    { userId: req.user.id, type: "qr" },
+    process.env.JWT_SECRET,
+    { expiresIn: "5m" }
+  );
+
+  res.json({ qr_token: qrToken });
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",
