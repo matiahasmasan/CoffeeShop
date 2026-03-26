@@ -4,12 +4,14 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
-import { getCards } from "../data/cards";
+import { getCards, getLikedStores, likeStore, unlikeStore } from "../data/cards";
 
 export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
+  const [filter, setFilter] = useState("all");
   const [cards, setCards] = useState([]);
+  const [likedIds, setLikedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(() => {
@@ -17,15 +19,23 @@ export default function Wallet() {
     return userData ? JSON.parse(userData) : null;
   });
 
-  const filteredCards = cards.filter((card) =>
-    card.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredCards = cards.filter((card) => {
+    const matchesSearch = card.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === "all" || likedIds.has(card.id);
+    return matchesSearch && matchesFilter;
+  });
 
   useEffect(() => {
     const fetchCards = async () => {
       setLoading(true);
-      const data = await getCards();
-      setCards(data);
+      const [allCards, liked] = await Promise.all([
+        getCards(),
+        getLikedStores(),
+      ]);
+      setCards(allCards);
+      setLikedIds(new Set(liked.map((s) => s.id)));
       setLoading(false);
     };
     fetchCards();
@@ -42,6 +52,20 @@ export default function Wallet() {
     navigate(`/card/${cardId}`);
   };
 
+  const handleToggleLike = async (cardId) => {
+    if (likedIds.has(cardId)) {
+      await unlikeStore(cardId);
+      setLikedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(cardId);
+        return next;
+      });
+    } else {
+      await likeStore(cardId);
+      setLikedIds((prev) => new Set(prev).add(cardId));
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
@@ -55,6 +79,28 @@ export default function Wallet() {
           <p className="text-gray-500 text-sm mb-8">
             Choose a coffee shop to view its loyalty card and details.
           </p>
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filter === "all"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("liked")}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filter === "liked"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              ♥ Liked
+            </button>
+          </div>
           <SearchBar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -65,9 +111,15 @@ export default function Wallet() {
             </div>
           ) : filteredCards.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No coffee shops found</p>
+              <p className="text-gray-500 text-lg">
+                {filter === "liked"
+                  ? "No liked coffee shops yet"
+                  : "No coffee shops found"}
+              </p>
               <p className="text-gray-400 text-sm mt-2">
-                Try adjusting your search
+                {filter === "liked"
+                  ? "Open a coffee shop and tap the heart to save it"
+                  : "Try adjusting your search"}
               </p>
             </div>
           ) : (
@@ -77,6 +129,8 @@ export default function Wallet() {
                   key={card.id}
                   card={card}
                   onCardClick={handleCardClick}
+                  isLiked={likedIds.has(card.id)}
+                  onToggleLike={handleToggleLike}
                 />
               ))}
             </div>

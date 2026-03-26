@@ -6,14 +6,22 @@ import CardHeader from "../components/CardHeader";
 import CardMap from "../components/CardMap";
 import SocialLinks from "../components/SocialLinks";
 import LoyaltyPoints from "../components/LoyaltyPoints";
-import { getCardById } from "../data/cards";
-import { claimCard } from "../data/cards";
+import {
+  getCardById,
+  claimCard,
+  getLikedStores,
+  likeStore,
+  unlikeStore,
+} from "../data/cards";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
 export default function CardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     const fetchCard = async () => {
@@ -32,8 +40,22 @@ export default function CardDetail() {
       setCard(data);
       setLoading(false);
     };
+    const fetchLiked = async () => {
+      const liked = await getLikedStores();
+      setLiked(liked.some((s) => s.id === Number(id)));
+    };
     fetchCard();
+    fetchLiked();
   }, [id]);
+
+  const toggleLike = async () => {
+    if (liked) {
+      await unlikeStore(id);
+    } else {
+      await likeStore(id);
+    }
+    setLiked(!liked);
+  };
 
   if (loading) {
     return (
@@ -68,7 +90,19 @@ export default function CardDetail() {
         <p className="text-xs font-bold text-indigo-500 uppercase tracking-wide mb-2">
           {card.category}
         </p>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">{card.name}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-4xl font-bold text-gray-900">{card.name}</h1>
+          <button
+            onClick={toggleLike}
+            className="p-2 rounded-full transition-colors hover:bg-gray-100"
+            aria-label={liked ? "Unlike store" : "Like store"}
+          >
+            <FontAwesomeIcon
+              icon={faHeart}
+              className={`text-2xl ${liked ? "text-purple-600" : "text-gray-300"}`}
+            />
+          </button>
+        </div>
 
         <div className="flex items-center gap-2 text-gray-600 mb-6">
           <span>📍</span>

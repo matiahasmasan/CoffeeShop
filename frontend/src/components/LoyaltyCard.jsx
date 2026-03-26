@@ -1,7 +1,12 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { faStar, faHeart } from "@fortawesome/free-solid-svg-icons";
 
-export default function LoyaltyCard({ card, onCardClick }) {
+export default function LoyaltyCard({
+  card,
+  onCardClick,
+  isLiked,
+  onToggleLike,
+}) {
   const handleClick = () => {
     onCardClick(card.id);
   };
@@ -43,6 +48,21 @@ export default function LoyaltyCard({ card, onCardClick }) {
               {card.category}
             </p>
           </div>
+          {onToggleLike && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLike(card.id);
+              }}
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label={isLiked ? "Unlike store" : "Like store"}
+            >
+              <FontAwesomeIcon
+                icon={faHeart}
+                className={`text-lg ${isLiked ? "text-purple-600" : "text-gray-300"}`}
+              />
+            </button>
+          )}
         </div>
         {card.rating && (
           <div className="flex items-center gap-2 mb-2">

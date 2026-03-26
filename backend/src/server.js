@@ -323,6 +323,42 @@ app.post("/api/cards/claim", verifyToken, (req, res) => {
   });
 });
 
+// Get all liked stores for the logged-in user
+app.get("/api/likes", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  const sql = `
+    SELECT s.* FROM stores s
+    INNER JOIN liked_stores ls ON ls.store_id = s.id
+    WHERE ls.user_id = ?
+  `;
+  con.query(sql, [userId], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.json(result);
+  });
+});
+
+// Like a store
+app.post("/api/likes/:storeId", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  const { storeId } = req.params;
+  const sql = "INSERT IGNORE INTO liked_stores (user_id, store_id, created_at) VALUES (?, ?, NOW())";
+  con.query(sql, [userId, storeId], (err) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.status(201).json({ succes: true, mesaj: "Store liked!" });
+  });
+});
+
+// Unlike a store
+app.delete("/api/likes/:storeId", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  const { storeId } = req.params;
+  const sql = "DELETE FROM liked_stores WHERE user_id = ? AND store_id = ?";
+  con.query(sql, [userId, storeId], (err) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.json({ succes: true, mesaj: "Store unliked!" });
+  });
+});
+
 app.use("/uploads", express.static(uploadsDir));
 
 app.post("/api/upload", verifyToken, upload.single("image"), (req, res) => {

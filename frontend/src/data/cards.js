@@ -54,6 +54,48 @@ export async function getCardById(storeId) {
   }
 }
 
+export async function getLikedStores() {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`${API_URL}/likes`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching liked stores:", error);
+    return [];
+  }
+}
+
+export async function likeStore(storeId) {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`${API_URL}/likes/${storeId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error liking store:", error);
+    return null;
+  }
+}
+
+export async function unlikeStore(storeId) {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`${API_URL}/likes/${storeId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error unliking store:", error);
+    return null;
+  }
+}
+
 // Add this for claiming:
 export async function claimCard(storeId) {
   const token = localStorage.getItem("token");
