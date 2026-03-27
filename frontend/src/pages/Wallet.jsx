@@ -4,7 +4,12 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
-import { getCards, getLikedStores, likeStore, unlikeStore } from "../data/cards";
+import {
+  getCards,
+  getLikedStores,
+  likeStore,
+  unlikeStore,
+} from "../data/cards";
 
 export default function Wallet() {
   const navigate = useNavigate();
@@ -72,7 +77,7 @@ export default function Wallet() {
       <div className="flex-1 overflow-y-auto px-5 py-8 max-w-5xl mx-auto w-full">
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               Welcome {user?.firstName || "Coffee Lover"}!
             </h2>
           </div>

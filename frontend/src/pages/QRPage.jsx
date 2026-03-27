@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "../components/QRCode";
+import Footer from "../components/Footer";
 
 export default function QRPage() {
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("qr");
 
   const fetchQRToken = async () => {
     setLoading(true);
@@ -30,32 +32,35 @@ export default function QRPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-6 bg-gray-50">
-      <h2 className="text-xl font-bold text-gray-800">Codul tău QR</h2>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
+        <h2 className="text-xl font-bold text-gray-800">Codul tău QR</h2>
 
-      {loading && <p className="text-gray-400 text-sm">Se generează...</p>}
+        {loading && <p className="text-gray-400 text-sm">Se generează...</p>}
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      {token && <QRCode token={token} />}
+        {token && <QRCode token={token} />}
 
-      <button
-        onClick={fetchQRToken}
-        className="mt-2 px-6 py-2 bg-indigo-500 text-white text-sm font-semibold rounded-lg hover:bg-indigo-600 transition-colors"
-      >
-        Regenerează
-      </button>
+        <button
+          onClick={fetchQRToken}
+          className="mt-2 px-6 py-2 bg-indigo-500 text-white text-sm font-semibold rounded-lg hover:bg-indigo-600 transition-colors"
+        >
+          Regenerează
+        </button>
 
-      <button
-        onClick={() => navigate(-1)}
-        className="px-6 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-      >
-        Înapoi
-      </button>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-6 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+        >
+          Înapoi
+        </button>
 
-      <p className="text-xs text-gray-400 text-center">
-        Prezintă acest cod la casă. Expiră în 5 minute.
-      </p>
+        <p className="text-xs text-gray-400 text-center">
+          Prezintă acest cod la casă. Expiră în 5 minute.
+        </p>
+      </div>
+      <Footer activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }
