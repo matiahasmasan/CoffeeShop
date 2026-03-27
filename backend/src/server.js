@@ -280,6 +280,22 @@ app.delete("/api/stores/:id", verifyToken, (req, res) => {
   });
 });
 
+// Get all loyalty cards for the logged-in user
+app.get("/api/cards", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  const sql = `
+    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id
+    FROM loyalty_cards lc
+    INNER JOIN stores s ON s.id = lc.store_id
+    WHERE lc.user_id = ?
+    ORDER BY lc.created_at DESC
+  `;
+  con.query(sql, [userId], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.json(result);
+  });
+});
+
 // Get a specific card for the logged-in user
 app.get("/api/cards/:storeId", verifyToken, (req, res) => {
   const { storeId } = req.params;

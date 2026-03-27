@@ -96,6 +96,31 @@ export async function unlikeStore(storeId) {
   }
 }
 
+export async function getUserCards() {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`${API_URL}/cards`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login";
+        return [];
+      }
+      return [];
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user cards:", error);
+    return [];
+  }
+}
+
 // Add this for claiming:
 export async function claimCard(storeId) {
   const token = localStorage.getItem("token");

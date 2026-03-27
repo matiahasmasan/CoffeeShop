@@ -15,6 +15,7 @@ import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
+import Cards from "./pages/Cards.jsx";
 
 function App() {
   return (
@@ -33,9 +34,13 @@ function App() {
           path="/home" 
           element={<ProtectedRoute><Wallet /></ProtectedRoute>} 
         />
-        <Route 
-          path="/map" 
-          element={<ProtectedRoute><Map /></ProtectedRoute>} 
+        <Route
+          path="/cards"
+          element={<ProtectedRoute><Cards /></ProtectedRoute>}
+        />
+        <Route
+          path="/map"
+          element={<ProtectedRoute><Map /></ProtectedRoute>}
         />
         <Route 
           path="/settings" 
