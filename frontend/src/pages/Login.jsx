@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   //Verificare existenta token
@@ -37,6 +38,8 @@ export default function Login() {
       } else {
         navigate("/adminDashboard");
       }
+    }else{
+      setError(data.message || "Email sau parolă incorectă.");
     }
   };
 
@@ -87,6 +90,9 @@ export default function Login() {
               required
             />
           </div>
+          {error && (
+            <p className="text-red-500 text-sm mt-2">{error}</p>
+          )}
 
           <button
             type="submit"
