@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpAZ, faFilter } from "@fortawesome/free-solid-svg-icons";
 import {
   getCards,
   getLikedStores,
@@ -15,22 +17,44 @@ export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("az");
   const [cards, setCards] = useState([]);
   const [likedIds, setLikedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState(() => {
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const sortRef = useRef(null);
+  const filterRef = useRef(null);
+  const [user] = useState(() => {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
   });
 
-  const filteredCards = cards.filter((card) => {
-    const matchesSearch = card.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === "all" || likedIds.has(card.id);
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target))
+        setSortOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target))
+        setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredCards = cards
+    .filter((card) => {
+      const matchesSearch = card.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesFilter = filter === "all" || likedIds.has(card.id);
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) =>
+      sortBy === "az"
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name),
+    );
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -48,14 +72,10 @@ export default function Wallet() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    }
+    if (!token) navigate("/login");
   }, [navigate]);
 
-  const handleCardClick = (cardId) => {
-    navigate(`/card/${cardId}`);
-  };
+  const handleCardClick = (cardId) => navigate(`/card/${cardId}`);
 
   const handleToggleLike = async (cardId) => {
     if (likedIds.has(cardId)) {
@@ -84,32 +104,110 @@ export default function Wallet() {
           <p className="text-gray-500 text-sm mb-4">
             Choose a coffee shop to view its loyalty card and details.
           </p>
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === "all"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter("liked")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === "liked"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              ♥ Liked
-            </button>
+
+          <div className="flex items-center gap-2 mb-3">
+            {/* Sort dropdown */}
+            <div className="relative" ref={sortRef}>
+              <button
+                onClick={() => {
+                  setSortOpen((o) => !o);
+                  setFilterOpen(false);
+                }}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+                  sortOpen
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                <FontAwesomeIcon icon={faArrowUpAZ} />
+              </button>
+              {sortOpen && (
+                <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setSortBy("az");
+                      setSortOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      sortBy === "az"
+                        ? "bg-indigo-50 text-indigo-600 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    A → Z
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortBy("za");
+                      setSortOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      sortBy === "za"
+                        ? "bg-indigo-50 text-indigo-600 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Z → A
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Filter dropdown */}
+            <div className="relative" ref={filterRef}>
+              <button
+                onClick={() => {
+                  setFilterOpen((o) => !o);
+                  setSortOpen(false);
+                }}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+                  filterOpen
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                <FontAwesomeIcon icon={faFilter} />
+              </button>
+              {filterOpen && (
+                <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setFilter("all");
+                      setFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      filter === "all"
+                        ? "bg-indigo-50 text-indigo-600 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilter("liked");
+                      setFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                      filter === "liked"
+                        ? "bg-indigo-50 text-indigo-600 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    ♥ Liked
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+
+          <div className="mb-4">
+            <SearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          </div>
+
           {loading ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Loading coffee shops...</p>
