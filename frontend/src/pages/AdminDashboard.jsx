@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCards } from "../data/cards";
 
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
                     );
 
                     return (
-                      <>
+                      <React.Fragment key={idx}>
                         <tr
                           key={`row-${idx}`}
                           className="hover:bg-gray-50 transition-colors"
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
