@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUpAZ, faFilter } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpAZ, faFilter, faHeart } from "@fortawesome/free-solid-svg-icons";
 import {
   getCards,
   getLikedStores,
@@ -17,6 +17,7 @@ export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [filter, setFilter] = useState("all");
+  const [likedOnly, setLikedOnly] = useState(false);
   const [sortBy, setSortBy] = useState("az");
   const [cards, setCards] = useState([]);
   const [likedIds, setLikedIds] = useState(new Set());
@@ -45,12 +46,12 @@ export default function Wallet() {
   const filteredCards = cards
     .filter((card) => {
       const matchesSearch = card.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter =
+      const matchesRating =
         filter === "all" ||
-        (filter === "liked" && likedIds.has(card.id)) ||
         (filter === "4+" && (card.rating ?? 0) >= 4) ||
         (filter === "3+" && (card.rating ?? 0) >= 3);
-      return matchesSearch && matchesFilter;
+      const matchesLiked = !likedOnly || likedIds.has(card.id);
+      return matchesSearch && matchesRating && matchesLiked;
     })
     .sort((a, b) => {
       if (sortBy === "az") return a.name.localeCompare(b.name);
@@ -63,10 +64,7 @@ export default function Wallet() {
   useEffect(() => {
     const fetchCards = async () => {
       setLoading(true);
-      const [allCards, liked] = await Promise.all([
-        getCards(),
-        getLikedStores(),
-      ]);
+      const [allCards, liked] = await Promise.all([getCards(), getLikedStores()]);
       setCards(allCards);
       setLikedIds(new Set(liked.map((s) => s.id)));
       setLoading(false);
@@ -113,17 +111,15 @@ export default function Wallet() {
             {/* Sort dropdown */}
             <div className="relative" ref={sortRef}>
               <button
-                onClick={() => {
-                  setSortOpen((o) => !o);
-                  setFilterOpen(false);
-                }}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+                onClick={() => { setSortOpen((o) => !o); setFilterOpen(false); }}
+                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
                   sortOpen || sortBy !== "az"
                     ? "bg-indigo-600 text-white"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
               >
                 <FontAwesomeIcon icon={faArrowUpAZ} />
+                Sort
               </button>
               {sortOpen && (
                 <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
@@ -152,23 +148,20 @@ export default function Wallet() {
             {/* Filter dropdown */}
             <div className="relative" ref={filterRef}>
               <button
-                onClick={() => {
-                  setFilterOpen((o) => !o);
-                  setSortOpen(false);
-                }}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+                onClick={() => { setFilterOpen((o) => !o); setSortOpen(false); }}
+                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
                   filterOpen || filter !== "all"
                     ? "bg-indigo-600 text-white"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
               >
                 <FontAwesomeIcon icon={faFilter} />
+                Filter
               </button>
               {filterOpen && (
                 <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
                   {[
                     { value: "all", label: "All" },
-                    { value: "liked", label: "♥ Liked" },
                     { value: "4+", label: "★★★★+ (4+)" },
                     { value: "3+", label: "★★★+ (3+)" },
                   ].map(({ value, label }) => (
@@ -187,13 +180,23 @@ export default function Wallet() {
                 </div>
               )}
             </div>
+
+            {/* Liked toggle */}
+            <button
+              onClick={() => setLikedOnly((o) => !o)}
+              className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
+                likedOnly
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              <FontAwesomeIcon icon={faHeart} />
+              Liked
+            </button>
           </div>
 
           <div className="mb-4">
-            <SearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
+            <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
           </div>
 
           {loading ? (
@@ -203,12 +206,10 @@ export default function Wallet() {
           ) : filteredCards.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                {filter === "liked"
-                  ? "No liked coffee shops yet"
-                  : "No coffee shops found"}
+                {likedOnly ? "No liked coffee shops yet" : "No coffee shops found"}
               </p>
               <p className="text-gray-400 text-sm mt-2">
-                {filter === "liked"
+                {likedOnly
                   ? "Open a coffee shop and tap the heart to save it"
                   : "Try adjusting your search"}
               </p>
