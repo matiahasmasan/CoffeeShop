@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUpAZ, faFilter, faHeart } from "@fortawesome/free-solid-svg-icons";
+import SortWidget from "../components/SortWidget";
+import FilterWidget from "../components/FilterWidget";
+import LikedWidget from "../components/LikedWidget";
 import {
   getCards,
   getLikedStores,
@@ -23,25 +24,10 @@ export default function Wallet() {
   const [likedIds, setLikedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const sortRef = useRef(null);
-  const filterRef = useRef(null);
   const [user] = useState(() => {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
   });
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (sortRef.current && !sortRef.current.contains(e.target))
-        setSortOpen(false);
-      if (filterRef.current && !filterRef.current.contains(e.target))
-        setFilterOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const filteredCards = cards
     .filter((card) => {
@@ -108,91 +94,9 @@ export default function Wallet() {
           </p>
 
           <div className="flex items-center gap-2 mb-3">
-            {/* Sort dropdown */}
-            <div className="relative" ref={sortRef}>
-              <button
-                onClick={() => { setSortOpen((o) => !o); setFilterOpen(false); }}
-                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
-                  sortOpen || sortBy !== "az"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-              >
-                <FontAwesomeIcon icon={faArrowUpAZ} />
-                Sort
-              </button>
-              {sortOpen && (
-                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  {[
-                    { value: "az", label: "A → Z" },
-                    { value: "za", label: "Z → A" },
-                    { value: "rating-desc", label: "★ High → Low" },
-                    { value: "rating-asc", label: "★ Low → High" },
-                  ].map(({ value, label }) => (
-                    <button
-                      key={value}
-                      onClick={() => { setSortBy(value); setSortOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        sortBy === value
-                          ? "bg-indigo-50 text-indigo-600 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Filter dropdown */}
-            <div className="relative" ref={filterRef}>
-              <button
-                onClick={() => { setFilterOpen((o) => !o); setSortOpen(false); }}
-                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
-                  filterOpen || filter !== "all"
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-              >
-                <FontAwesomeIcon icon={faFilter} />
-                Filter
-              </button>
-              {filterOpen && (
-                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  {[
-                    { value: "all", label: "All" },
-                    { value: "4+", label: "★★★★+ (4+)" },
-                    { value: "3+", label: "★★★+ (3+)" },
-                  ].map(({ value, label }) => (
-                    <button
-                      key={value}
-                      onClick={() => { setFilter(value); setFilterOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        filter === value
-                          ? "bg-indigo-50 text-indigo-600 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Liked toggle */}
-            <button
-              onClick={() => setLikedOnly((o) => !o)}
-              className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
-                likedOnly
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              <FontAwesomeIcon icon={faHeart} />
-              Liked
-            </button>
+            <SortWidget sortBy={sortBy} onChange={setSortBy} />
+            <FilterWidget filter={filter} onChange={setFilter} />
+            <LikedWidget likedOnly={likedOnly} onChange={setLikedOnly} />
           </div>
 
           <div className="mb-4">
