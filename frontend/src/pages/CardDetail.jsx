@@ -104,13 +104,13 @@ export default function CardDetail() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-gray-600 mb-6">
+        <div className="flex items-center gap-2 text-gray-600 mb-4">
           <span>📍</span>
           <p className="text-sm">{card.address}</p>
         </div>
 
         <div
-          className="w-full h-56 rounded-lg overflow-hidden mb-6"
+          className="w-full h-56 rounded-lg overflow-hidden mb-4"
           style={{
             backgroundImage: `url(${card.background_url})`,
             backgroundSize: "cover",
@@ -127,14 +127,14 @@ export default function CardDetail() {
               const data = await getCardById(id); // refresh
               setCard(data);
             }}
-            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition mb-6"
+            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition mb-4"
           >
             ☕ Get Loyalty Card
           </button>
         )}
 
-        <div className="bg-white rounded-lg p-6 mb-6">
-          <p className="text-gray-700 text-sm leading-relaxed mb-6">
+        <div className="bg-white rounded-lg p-6 mb-4">
+          <p className="text-gray-700 text-sm leading-relaxed mb-4">
             {card.description}
           </p>
 
@@ -163,7 +163,6 @@ export default function CardDetail() {
             <CardMap mapsLink={card.maps_link} shopName={card.name} />
           </div>
         </div>
-
       </div>
 
       <Footer />

@@ -81,7 +81,7 @@ export default function Wallet() {
               Welcome {user?.firstName || "Coffee Lover"}!
             </h2>
           </div>
-          <p className="text-gray-500 text-sm mb-8">
+          <p className="text-gray-500 text-sm mb-4">
             Choose a coffee shop to view its loyalty card and details.
           </p>
           <div className="flex gap-2 mb-4">

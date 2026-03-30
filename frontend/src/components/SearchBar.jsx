@@ -4,7 +4,7 @@ export default function SearchBar({
   placeholder = "Search coffee shops...",
 }) {
   return (
-    <div className="mb-8">
+    <div className="mb-4">
       <div className="relative">
         <input
           type="text"

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import QRCode from "../components/QRCode";
 import Footer from "../components/Footer";
+import Header from "../components/Header";
 
 export default function QRPage() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export default function QRPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header />
       <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
         <h2 className="text-xl font-bold text-gray-800">Codul tău QR</h2>
 

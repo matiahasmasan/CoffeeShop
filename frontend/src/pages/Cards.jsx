@@ -53,7 +53,11 @@ function MyLoyaltyCard({ card, onClick }) {
                   : "bg-gray-50 border-2 border-dashed border-gray-200"
               }`}
             >
-              {i < points ? "☕" : <span className="text-gray-300 text-xs">·</span>}
+              {i < points ? (
+                "☕"
+              ) : (
+                <span className="text-gray-300 text-xs">·</span>
+              )}
             </div>
           ))}
         </div>
@@ -105,7 +109,7 @@ export default function Cards() {
             {cards.length} {cards.length === 1 ? "card" : "cards"}
           </span>
         </div>
-        <p className="text-gray-500 text-sm mb-8">
+        <p className="text-gray-500 text-sm mb-4">
           Your loyalty cards from coffee shops you've joined.
         </p>
 
@@ -118,7 +122,8 @@ export default function Cards() {
             <span className="text-6xl">☕</span>
             <h3 className="text-xl font-bold text-gray-800">No cards yet</h3>
             <p className="text-gray-400 text-sm text-center max-w-xs">
-              Visit a coffee shop and claim your first loyalty card to start earning rewards.
+              Visit a coffee shop and claim your first loyalty card to start
+              earning rewards.
             </p>
             <button
               onClick={() => navigate("/home")}

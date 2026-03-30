@@ -15,7 +15,7 @@ export default function Settings() {
       <Header />
 
       <div className="flex-1 overflow-y-auto px-5 py-8 max-w-5xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-3xl font-bold text-gray-900">Settings</h2>
           <button
             onClick={handleLogout}
