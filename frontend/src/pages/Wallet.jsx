@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import LoyaltyCard from "../components/LoyaltyCard";
 import SearchBar from "../components/SearchBar";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpAZ, faFilter, faHeart } from "@fortawesome/free-solid-svg-icons";
 import {
   getCards,
   getLikedStores,
@@ -15,30 +17,54 @@ export default function Wallet() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [filter, setFilter] = useState("all");
+  const [likedOnly, setLikedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState("az");
   const [cards, setCards] = useState([]);
   const [likedIds, setLikedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState(() => {
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const sortRef = useRef(null);
+  const filterRef = useRef(null);
+  const [user] = useState(() => {
     const userData = localStorage.getItem("user");
     return userData ? JSON.parse(userData) : null;
   });
 
-  const filteredCards = cards.filter((card) => {
-    const matchesSearch = card.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === "all" || likedIds.has(card.id);
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target))
+        setSortOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target))
+        setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredCards = cards
+    .filter((card) => {
+      const matchesSearch = card.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRating =
+        filter === "all" ||
+        (filter === "4+" && (card.rating ?? 0) >= 4) ||
+        (filter === "3+" && (card.rating ?? 0) >= 3);
+      const matchesLiked = !likedOnly || likedIds.has(card.id);
+      return matchesSearch && matchesRating && matchesLiked;
+    })
+    .sort((a, b) => {
+      if (sortBy === "az") return a.name.localeCompare(b.name);
+      if (sortBy === "za") return b.name.localeCompare(a.name);
+      if (sortBy === "rating-desc") return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sortBy === "rating-asc") return (a.rating ?? 0) - (b.rating ?? 0);
+      return 0;
+    });
 
   useEffect(() => {
     const fetchCards = async () => {
       setLoading(true);
-      const [allCards, liked] = await Promise.all([
-        getCards(),
-        getLikedStores(),
-      ]);
+      const [allCards, liked] = await Promise.all([getCards(), getLikedStores()]);
       setCards(allCards);
       setLikedIds(new Set(liked.map((s) => s.id)));
       setLoading(false);
@@ -48,14 +74,10 @@ export default function Wallet() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    }
+    if (!token) navigate("/login");
   }, [navigate]);
 
-  const handleCardClick = (cardId) => {
-    navigate(`/card/${cardId}`);
-  };
+  const handleCardClick = (cardId) => navigate(`/card/${cardId}`);
 
   const handleToggleLike = async (cardId) => {
     if (likedIds.has(cardId)) {
@@ -84,32 +106,99 @@ export default function Wallet() {
           <p className="text-gray-500 text-sm mb-4">
             Choose a coffee shop to view its loyalty card and details.
           </p>
-          <div className="flex gap-2 mb-4">
+
+          <div className="flex items-center gap-2 mb-3">
+            {/* Sort dropdown */}
+            <div className="relative" ref={sortRef}>
+              <button
+                onClick={() => { setSortOpen((o) => !o); setFilterOpen(false); }}
+                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
+                  sortOpen || sortBy !== "az"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                <FontAwesomeIcon icon={faArrowUpAZ} />
+                Sort
+              </button>
+              {sortOpen && (
+                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  {[
+                    { value: "az", label: "A → Z" },
+                    { value: "za", label: "Z → A" },
+                    { value: "rating-desc", label: "★ High → Low" },
+                    { value: "rating-asc", label: "★ Low → High" },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => { setSortBy(value); setSortOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        sortBy === value
+                          ? "bg-indigo-50 text-indigo-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Filter dropdown */}
+            <div className="relative" ref={filterRef}>
+              <button
+                onClick={() => { setFilterOpen((o) => !o); setSortOpen(false); }}
+                className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
+                  filterOpen || filter !== "all"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                <FontAwesomeIcon icon={faFilter} />
+                Filter
+              </button>
+              {filterOpen && (
+                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "4+", label: "★★★★+ (4+)" },
+                    { value: "3+", label: "★★★+ (3+)" },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => { setFilter(value); setFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        filter === value
+                          ? "bg-indigo-50 text-indigo-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Liked toggle */}
             <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === "all"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilter("liked")}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === "liked"
+              onClick={() => setLikedOnly((o) => !o)}
+              className={`flex items-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-colors ${
+                likedOnly
                   ? "bg-purple-600 text-white"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
             >
-              ♥ Liked
+              <FontAwesomeIcon icon={faHeart} />
+              Liked
             </button>
           </div>
-          <SearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
+
+          <div className="mb-4">
+            <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          </div>
+
           {loading ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Loading coffee shops...</p>
@@ -117,12 +206,10 @@ export default function Wallet() {
           ) : filteredCards.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                {filter === "liked"
-                  ? "No liked coffee shops yet"
-                  : "No coffee shops found"}
+                {likedOnly ? "No liked coffee shops yet" : "No coffee shops found"}
               </p>
               <p className="text-gray-400 text-sm mt-2">
-                {filter === "liked"
+                {likedOnly
                   ? "Open a coffee shop and tap the heart to save it"
                   : "Try adjusting your search"}
               </p>
