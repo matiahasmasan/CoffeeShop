@@ -13,7 +13,7 @@ export default function Login() {
     const userString = localStorage.getItem("user");
     const user = userString ? JSON.parse(userString) : null;
     if (token && user && user.role_id !== 1) {
-      navigate("/wallet");
+      navigate("/home");
     }
     else if (token && user && user.role_id === 1) {
       navigate("/adminDashboard");
@@ -39,7 +39,7 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       if(data.user.role_id === 2) {
-        navigate("/wallet");
+        navigate("/home");
       } else {
         navigate("/adminDashboard");
       }
