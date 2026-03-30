@@ -44,17 +44,21 @@ export default function Wallet() {
 
   const filteredCards = cards
     .filter((card) => {
-      const matchesSearch = card.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const matchesFilter = filter === "all" || likedIds.has(card.id);
+      const matchesSearch = card.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "liked" && likedIds.has(card.id)) ||
+        (filter === "4+" && (card.rating ?? 0) >= 4) ||
+        (filter === "3+" && (card.rating ?? 0) >= 3);
       return matchesSearch && matchesFilter;
     })
-    .sort((a, b) =>
-      sortBy === "az"
-        ? a.name.localeCompare(b.name)
-        : b.name.localeCompare(a.name),
-    );
+    .sort((a, b) => {
+      if (sortBy === "az") return a.name.localeCompare(b.name);
+      if (sortBy === "za") return b.name.localeCompare(a.name);
+      if (sortBy === "rating-desc") return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sortBy === "rating-asc") return (a.rating ?? 0) - (b.rating ?? 0);
+      return 0;
+    });
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -122,33 +126,25 @@ export default function Wallet() {
                 <FontAwesomeIcon icon={faArrowUpAZ} />
               </button>
               {sortOpen && (
-                <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setSortBy("az");
-                      setSortOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      sortBy === "az"
-                        ? "bg-indigo-50 text-indigo-600 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    A → Z
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSortBy("za");
-                      setSortOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      sortBy === "za"
-                        ? "bg-indigo-50 text-indigo-600 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Z → A
-                  </button>
+                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  {[
+                    { value: "az", label: "A → Z" },
+                    { value: "za", label: "Z → A" },
+                    { value: "rating-desc", label: "★ High → Low" },
+                    { value: "rating-asc", label: "★ Low → High" },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => { setSortBy(value); setSortOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        sortBy === value
+                          ? "bg-indigo-50 text-indigo-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -169,33 +165,25 @@ export default function Wallet() {
                 <FontAwesomeIcon icon={faFilter} />
               </button>
               {filterOpen && (
-                <div className="absolute left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setFilter("all");
-                      setFilterOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      filter === "all"
-                        ? "bg-indigo-50 text-indigo-600 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => {
-                      setFilter("liked");
-                      setFilterOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      filter === "liked"
-                        ? "bg-indigo-50 text-indigo-600 font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    ♥ Liked
-                  </button>
+                <div className="absolute left-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                  {[
+                    { value: "all", label: "All" },
+                    { value: "liked", label: "♥ Liked" },
+                    { value: "4+", label: "★★★★+ (4+)" },
+                    { value: "3+", label: "★★★+ (3+)" },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => { setFilter(value); setFilterOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        filter === value
+                          ? "bg-indigo-50 text-indigo-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
