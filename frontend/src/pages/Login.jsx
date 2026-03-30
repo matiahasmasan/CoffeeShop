@@ -30,6 +30,11 @@ export default function Login() {
     });
 
     const data = await response.json();
+
+    if (response.status === 429) {
+    setError(data.message || "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later.");
+    return;
+  }
     if (data.succes) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -39,7 +44,8 @@ export default function Login() {
         navigate("/adminDashboard");
       }
     }else{
-      setError(data.message || "Email sau parolă incorectă.");
+      setError(data.message || "Incorrect username or password.");
+      setPassword("");
     }
   };
 

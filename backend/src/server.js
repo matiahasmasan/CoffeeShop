@@ -109,9 +109,9 @@ async function hashPassword(password) {
 }
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 10,                   
-  message: { mesaj: "Prea multe încercări. Încearcă din nou după 15 minute." }
+  windowMs: 5 * 60 * 1000, 
+  max: 5,                   
+  message: { mesaj: "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later." }
 });
 
 
