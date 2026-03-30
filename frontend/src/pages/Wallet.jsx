@@ -118,7 +118,7 @@ export default function Wallet() {
                   setFilterOpen(false);
                 }}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
-                  sortOpen
+                  sortOpen || sortBy !== "az"
                     ? "bg-indigo-600 text-white"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
@@ -157,7 +157,7 @@ export default function Wallet() {
                   setSortOpen(false);
                 }}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
-                  filterOpen
+                  filterOpen || filter !== "all"
                     ? "bg-indigo-600 text-white"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
