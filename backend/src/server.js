@@ -183,26 +183,38 @@ app.post("/api/register", async (req, res) => {
 });
 
 app.get("/api/stores", verifyToken, (req, res) => {
-  const sql = "SELECT * FROM stores";
+  const sql = `
+    SELECT s.*, GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
+    FROM stores s
+    LEFT JOIN store_images si ON si.store_id = s.id
+    GROUP BY s.id
+  `;
   con.query(sql, (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ mesaj: "Eroare la server" });
     }
-    res.json(result);
+    res.json(result.map((r) => ({ ...r, images: r.images ? r.images.split("|||") : [] })));
   });
 });
 
 app.get("/api/stores/:id", verifyToken, (req, res) => {
   const { id } = req.params;
-  const sql = "SELECT * FROM stores WHERE id = ?";
+  const sql = `
+    SELECT s.*, GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
+    FROM stores s
+    LEFT JOIN store_images si ON si.store_id = s.id
+    WHERE s.id = ?
+    GROUP BY s.id
+  `;
   con.query(sql, [id], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ mesaj: "Eroare la server" });
     }
     if (result.length > 0) {
-      res.json(result[0]);
+      const row = result[0];
+      res.json({ ...row, images: row.images ? row.images.split("|||") : [] });
     } else {
       res.status(404).json({ mesaj: "Store nu a fost gasit" });
     }
@@ -219,7 +231,6 @@ app.post("/api/stores", verifyToken, (req, res) => {
     name,
     address,
     logo_url,
-    background_url,
     description,
     hours,
     phone,
@@ -236,16 +247,15 @@ app.post("/api/stores", verifyToken, (req, res) => {
   }
 
   const sql = `
-    INSERT INTO stores 
-      (name, address, logo_url, background_url, description, hours, phone, email, links, maps_link, rating)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO stores
+      (name, address, logo_url, description, hours, phone, email, links, maps_link, rating)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
     name,
     address,
     logo_url || null,
-    background_url || null,
     description || null,
     hours || null,
     phone || null,
@@ -280,40 +290,83 @@ app.delete("/api/stores/:id", verifyToken, (req, res) => {
   });
 });
 
+// Add image(s) to a store
+app.post("/api/stores/:id/images", verifyToken, upload.array("images", 10), (req, res) => {
+  if (req.user.role !== 1)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { id } = req.params;
+  if (!req.files || req.files.length === 0)
+    return res.status(400).json({ mesaj: "Niciun fișier trimis." });
+
+  const values = req.files.map((file, i) => [
+    id,
+    `http://localhost:8000/uploads/${file.filename}`,
+    i,
+  ]);
+
+  con.query(
+    "INSERT INTO store_images (store_id, url, display_order) VALUES ?",
+    [values],
+    (err) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la salvarea imaginilor." });
+      res.status(201).json({ succes: true, mesaj: "Imagini adăugate." });
+    }
+  );
+});
+
+// Delete a store image
+app.delete("/api/store-images/:imageId", verifyToken, (req, res) => {
+  if (req.user.role !== 1)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { imageId } = req.params;
+  con.query("DELETE FROM store_images WHERE id = ?", [imageId], (err) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la ștergere." });
+    res.json({ succes: true, mesaj: "Imagine ștearsă." });
+  });
+});
+
 // Get all loyalty cards for the logged-in user
 app.get("/api/cards", verifyToken, (req, res) => {
   const userId = req.user.id;
   const sql = `
-    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id
+    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id,
+      GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
     FROM loyalty_cards lc
     INNER JOIN stores s ON s.id = lc.store_id
+    LEFT JOIN store_images si ON si.store_id = s.id
     WHERE lc.user_id = ?
+    GROUP BY s.id, lc.id
     ORDER BY lc.created_at DESC
   `;
   con.query(sql, [userId], (err, result) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
-    res.json(result);
+    res.json(result.map((r) => ({ ...r, images: r.images ? r.images.split("|||") : [] })));
   });
 });
 
 // Get a specific card for the logged-in user
 app.get("/api/cards/:storeId", verifyToken, (req, res) => {
   const { storeId } = req.params;
-  const userId = req.user.id; // from JWT token
+  const userId = req.user.id;
 
   const sql = `
-    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id
+    SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id,
+      GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
     FROM stores s
-    LEFT JOIN loyalty_cards lc 
-      ON lc.store_id = s.id AND lc.user_id = ?
+    LEFT JOIN loyalty_cards lc ON lc.store_id = s.id AND lc.user_id = ?
+    LEFT JOIN store_images si ON si.store_id = s.id
     WHERE s.id = ?
+    GROUP BY s.id, lc.id
   `;
 
   con.query(sql, [userId, storeId], (err, result) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
     if (result.length === 0)
       return res.status(404).json({ mesaj: "Store not found" });
-    res.json(result[0]);
+    const row = result[0];
+    res.json({ ...row, images: row.images ? row.images.split("|||") : [] });
   });
 });
 
