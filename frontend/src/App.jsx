@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
 import Cards from "./pages/Cards.jsx";
+import Reviews from "./pages/Reviews.jsx";
 
 function App() {
   return (
@@ -63,6 +64,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CardDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/card/:id/reviews"
+          element={
+            <ProtectedRoute>
+              <Reviews />
             </ProtectedRoute>
           }
         />
