@@ -27,7 +27,7 @@ export default function LoyaltyCard({
     >
       <div
         className="w-full h-44 bg-cover bg-center relative overflow-hidden"
-        style={{ backgroundImage: `url(${card.background_url})` }}
+        style={{ backgroundImage: card.images?.[0] ? `url(${card.images[0]})` : "none" }}
       >
         <div className="absolute inset-0 bg-black/30 hover:bg-black/50 transition-colors" />
         {card.logo_url && (

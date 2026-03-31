@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import CardHeader from "../components/CardHeader";
@@ -15,6 +15,71 @@ import {
 } from "../data/cards";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
+
+function ImageScroller({ images }) {
+  const [current, setCurrent] = useState(0);
+  const touchStartX = useRef(null);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full h-56 rounded-lg overflow-hidden mb-4 bg-gray-100 flex items-center justify-center">
+        <span className="text-gray-400 text-sm">No images</span>
+      </div>
+    );
+  }
+
+  const prev = () => setCurrent((i) => (i === 0 ? images.length - 1 : i - 1));
+  const next = () => setCurrent((i) => (i === images.length - 1 ? 0 : i + 1));
+
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (diff > 40) next();
+    else if (diff < -40) prev();
+    touchStartX.current = null;
+  };
+
+  return (
+    <div className="w-full h-56 rounded-lg overflow-hidden mb-4 relative select-none"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <img
+        src={images[current]}
+        alt={`Photo ${current + 1}`}
+        className="w-full h-full object-cover"
+      />
+
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+          >
+            ›
+          </button>
+
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${i === current ? "bg-white" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function CardDetail() {
   const { id } = useParams();
@@ -109,14 +174,7 @@ export default function CardDetail() {
           <p className="text-sm">{card.address}</p>
         </div>
 
-        <div
-          className="w-full h-56 rounded-lg overflow-hidden mb-4"
-          style={{
-            backgroundImage: `url(${card.background_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+        <ImageScroller images={card.images} />
 
         {card.card_id ? (
           <LoyaltyPoints currentPoints={card.points} maxPoints={6} />
