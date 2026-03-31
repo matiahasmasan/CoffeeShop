@@ -394,6 +394,44 @@ app.get("/api/qr-token", verifyToken, (req, res) => {
   res.json({ qr_token: qrToken });
 });
 
+// GET /api/reviews/:storeId — toate review-urile unui magazin
+app.get("/api/reviews/:storeId", verifyToken, (req, res) => {
+  const { storeId } = req.params;
+  const sql = `
+    SELECT r.id, r.user_id, r.rating, r.comment, r.created_at,
+           u.firstName, u.lastName
+    FROM reviews r
+    INNER JOIN users u ON u.id = r.user_id
+    WHERE r.store_id = ?
+    ORDER BY r.created_at DESC
+  `;
+  con.query(sql, [storeId], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.json(result);
+  });
+});
+
+// POST /api/reviews/:storeId — adaugă sau actualizează review-ul userului
+app.post("/api/reviews/:storeId", verifyToken, (req, res) => {
+  const { storeId } = req.params;
+  const userId = req.user.id;
+  const { rating, comment } = req.body;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ mesaj: "Rating trebuie să fie între 1 și 5." });
+  }
+
+  const sql = `
+    INSERT INTO reviews (user_id, store_id, rating, comment)
+    VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment)
+  `;
+  con.query(sql, [userId, storeId, rating, comment || null], (err) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.status(201).json({ succes: true });
+  });
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",

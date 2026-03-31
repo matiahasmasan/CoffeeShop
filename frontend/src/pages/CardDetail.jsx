@@ -22,6 +22,7 @@ export default function CardDetail() {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState({ avg: 0, count: 0 });
 
   useEffect(() => {
     const fetchCard = async () => {
@@ -44,8 +45,21 @@ export default function CardDetail() {
       const liked = await getLikedStores();
       setLiked(liked.some((s) => s.id === Number(id)));
     };
+    const fetchReviews = async () => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8000/api/reviews/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+        setReviewSummary({ avg, count: data.length });
+      }
+    };
+
     fetchCard();
     fetchLiked();
+    fetchReviews();
   }, [id]);
 
   const toggleLike = async () => {
@@ -101,6 +115,28 @@ export default function CardDetail() {
               icon={faHeart}
               className={`text-2xl ${liked ? "text-purple-600" : "text-gray-300"}`}
             />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1 mb-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <span
+              key={i}
+              className={`text-lg ${i <= Math.round(reviewSummary.avg) ? "text-yellow-400" : "text-gray-300"}`}
+            >
+              ★
+            </span>
+          ))}
+          {reviewSummary.count > 0 && (
+            <span className="text-sm text-gray-500 ml-1">
+              {reviewSummary.avg.toFixed(1)}
+            </span>
+          )}
+          <button
+            onClick={() => navigate(`/card/${id}/reviews`)}
+            className="text-sm text-indigo-500 hover:underline ml-1"
+          >
+            {reviewSummary.count} {reviewSummary.count === 1 ? "review" : "reviews"}
           </button>
         </div>
 
