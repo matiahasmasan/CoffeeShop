@@ -183,7 +183,8 @@ app.post("/api/register", async (req, res) => {
 app.get("/api/stores", verifyToken, (req, res) => {
   const sql = `
     SELECT s.*, GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
-      COALESCE(AVG(r.rating), 0) as rating
+      COALESCE(AVG(r.rating), 0) as rating,
+      COUNT(r.id) as review_count
     FROM stores s
     LEFT JOIN store_images si ON si.store_id = s.id
     LEFT JOIN reviews r ON r.store_id = s.id

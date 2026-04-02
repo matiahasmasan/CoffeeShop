@@ -80,6 +80,7 @@ export default function LoyaltyCard({
               ))}
             </div>
             <span className="text-xs text-gray-600">{card.rating}/5</span>
+            <span className="text-xs text-gray-400">({card.review_count} {card.review_count === 1 ? "review" : "reviews"})</span>
           </div>
         )}
         <p className="text-xs text-gray-500 leading-relaxed">{card.address}</p>
