@@ -6,6 +6,7 @@ import CardHeader from "../components/CardHeader";
 import CardMap from "../components/CardMap";
 import SocialLinks from "../components/SocialLinks";
 import LoyaltyPoints from "../components/LoyaltyPoints";
+import StarRating from "../components/StarRating";
 import {
   getCardById,
   claimCard,
@@ -184,14 +185,7 @@ export default function CardDetail() {
         </div>
 
         <div className="flex items-center gap-1 mb-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <span
-              key={i}
-              className={`text-lg ${i <= Math.round(reviewSummary.avg) ? "text-yellow-400" : "text-gray-300"}`}
-            >
-              ★
-            </span>
-          ))}
+          <StarRating value={reviewSummary.avg} />
           {reviewSummary.count > 0 && (
             <span className="text-sm text-gray-500 ml-1">
               {reviewSummary.avg.toFixed(1)}

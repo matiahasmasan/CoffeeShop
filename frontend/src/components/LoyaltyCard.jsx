@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import StarRating from "./StarRating";
 
 export default function LoyaltyCard({
   card,
@@ -66,19 +67,7 @@ export default function LoyaltyCard({
         </div>
         {card.rating != null && (
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <FontAwesomeIcon
-                  key={i}
-                  icon={faStar}
-                  className={
-                    i < card.rating
-                      ? "text-yellow-400 text-sm"
-                      : "text-gray-300 text-sm"
-                  }
-                />
-              ))}
-            </div>
+            <StarRating value={card.rating} size="text-sm" />
             <span className="text-xs text-gray-600">{card.rating}/5</span>
             <span className="text-xs text-gray-400">({card.review_count} {card.review_count === 1 ? "review" : "reviews"})</span>
           </div>
