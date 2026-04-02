@@ -3,16 +3,20 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import { app } from "../server.js";
 
+const mockQuery = vi.hoisted(() =>
+  vi.fn((_sql, paramsOrCb, cb) => {
+    if (typeof paramsOrCb === "function") paramsOrCb(null, []);
+    else cb(null, []);
+  })
+);
+
 // Mock pentru MySQL - nu vrem sa ne conectam la baza de date reala in teste
 vi.mock("mysql", () => {
   return {
     default: {
       createConnection: () => ({
         connect: (cb) => cb(null),
-        query: vi.fn((sql, paramsOrCb, cb) => {
-          if (typeof paramsOrCb === "function") paramsOrCb(null, []);
-          else cb(null, []);
-        })
+        query: mockQuery,
       }),
     },
   };
@@ -127,5 +131,40 @@ describe("POST /api/login", () => {
         .post("/api/login")
         .send({});
       expect(res.status).toBe(429);
+  });
+});
+
+// ─── POST /api/register ──────────────────────────────────────────────────────
+
+describe("POST /api/register", () => {
+  test("returneaza 201 cu date valide", async () => {
+    const res = await request(app)
+      .post("/api/register")
+      .send({
+        firstName: "Ion",
+        lastName: "Popescu",
+        email: "ion@test.com",
+        password: "parola123",
+        phone: "0712345678",
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
+  test("returneaza 500 la eroare de baza de date (ex: email duplicat)", async () => {
+    mockQuery.mockImplementationOnce((_sql, _params, cb) => {
+      cb(new Error("ER_DUP_ENTRY"), null);
+    });
+
+    const res = await request(app)
+      .post("/api/register")
+      .send({
+        firstName: "Ion",
+        lastName: "Popescu",
+        email: "ion@test.com",
+        password: "parola123",
+        phone: "0712345678",
+      });
+    expect(res.status).toBe(500);
   });
 });

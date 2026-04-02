@@ -61,7 +61,7 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="space-y-5 mb-6">
           <div className="flex gap-4">
-            <div className="flex flex-col gap-2 flex-1">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
               <label htmlFor="lastName" className="text-sm font-medium text-gray-800">
                 Last Name
               </label>
@@ -75,7 +75,7 @@ export default function Register() {
                 required
               />
             </div>
-            <div className="flex flex-col gap-2 flex-1">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
               <label htmlFor="firstName" className="text-sm font-medium text-gray-800">
                 First Name
               </label>
