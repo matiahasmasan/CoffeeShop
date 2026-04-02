@@ -155,23 +155,19 @@ app.post("/api/login", loginLimiter, async (req, res) => {
 
 app.post("/api/register", async (req, res) => {
   const { firstName, lastName, email, password, phone } = req.body;
-  console.log("[register] body primit:", { firstName, lastName, email, phone });
   try {
     const hashedPassword = await hashPassword(password);
-    console.log("[register] parola hash-uita cu succes");
     const sql =
-      "INSERT INTO users (role_id, firstName, lastName, email, password, phone) VALUES (1, ?, ?, ?, ?, ?)";
+      "INSERT INTO users (role_id, firstName, lastName, email, password, phone) VALUES (2, ?, ?, ?, ?, ?)";
     con.query(
       sql,
       [firstName, lastName, email, hashedPassword, phone],
       (err, result) => {
         if (err) {
-          console.error("[register] eroare DB:", err);
           return res.status(500).json({
             message: "Eroare la inregistrare. Posibil email duplicat.",
           });
         }
-        console.log("[register] utilizator creat cu id:", result.insertId);
         res.status(201).json({
           success: true,
           message: "Utilizator creat cu succes!",
@@ -180,7 +176,6 @@ app.post("/api/register", async (req, res) => {
       },
     );
   } catch (error) {
-    console.error("[register] eroare hashPassword:", error);
     res.status(500).json({ message: "Eroare interna de securitate." });
   }
 });
