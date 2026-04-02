@@ -184,9 +184,11 @@ app.post("/api/register", async (req, res) => {
 
 app.get("/api/stores", verifyToken, (req, res) => {
   const sql = `
-    SELECT s.*, GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
+    SELECT s.*, GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
+      COALESCE(AVG(r.rating), 0) as rating
     FROM stores s
     LEFT JOIN store_images si ON si.store_id = s.id
+    LEFT JOIN reviews r ON r.store_id = s.id
     GROUP BY s.id
   `;
   con.query(sql, (err, result) => {
@@ -353,10 +355,12 @@ app.get("/api/cards/:storeId", verifyToken, (req, res) => {
 
   const sql = `
     SELECT s.*, lc.points, lc.total_points_earned, lc.id as card_id,
-      GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
+     GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
+    COALESCE(AVG(r.rating), 0) as rating
     FROM stores s
     LEFT JOIN loyalty_cards lc ON lc.store_id = s.id AND lc.user_id = ?
     LEFT JOIN store_images si ON si.store_id = s.id
+    LEFT JOIN reviews r ON r.store_id = s.id
     WHERE s.id = ?
     GROUP BY s.id, lc.id
   `;

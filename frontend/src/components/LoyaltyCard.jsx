@@ -64,7 +64,7 @@ export default function LoyaltyCard({
             </button>
           )}
         </div>
-        {card.rating && (
+        {card.rating != null && (
           <div className="flex items-center gap-2 mb-2">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
