@@ -5,12 +5,12 @@ export default function AddStore() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingImages, setPendingImages] = useState([]); // { file, previewUrl }
 
   const [form, setForm] = useState({
     name: "",
     address: "",
     logo_url: "",
-    background_url: "",
     description: "",
     hours: "",
     phone: "",
@@ -26,7 +26,7 @@ export default function AddStore() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleImageUpload = async (e, field) => {
+  const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -42,10 +42,39 @@ export default function AddStore() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mesaj || "Eroare la upload.");
-      setForm((prev) => ({ ...prev, [field]: data.url }));
+      setForm((prev) => ({ ...prev, logo_url: data.url }));
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleGallerySelect = (e) => {
+    const files = Array.from(e.target.files);
+    const newPreviews = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPendingImages((prev) => [...prev, ...newPreviews]);
+    e.target.value = "";
+  };
+
+  const removeGalleryImage = (index) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadGallery = async (storeId) => {
+    if (pendingImages.length === 0) return;
+
+    const formData = new FormData();
+    pendingImages.forEach(({ file }) => formData.append("images", file));
+
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:8000/api/stores/${storeId}/images`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Eroare la upload galerie.");
   };
 
   const handleSubmit = async (e) => {
@@ -62,7 +91,6 @@ export default function AddStore() {
       name: form.name,
       address: form.address,
       logo_url: form.logo_url || null,
-      background_url: form.background_url || null,
       description: form.description || null,
       hours: form.hours || null,
       phone: form.phone || null,
@@ -86,6 +114,7 @@ export default function AddStore() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.mesaj || "Eroare la adăugare.");
 
+      await uploadGallery(data.id);
       navigate("/adminDashboard");
     } catch (err) {
       setError(err.message);
@@ -138,7 +167,7 @@ export default function AddStore() {
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => handleImageUpload(e, "logo_url")}
+                onChange={handleLogoUpload}
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
               />
               {form.logo_url && (
@@ -146,19 +175,37 @@ export default function AddStore() {
               )}
             </div>
 
-            {/* Background Upload */}
+            {/* Gallery Upload */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Background
+                Gallery Images
               </label>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => handleImageUpload(e, "background_url")}
+                multiple
+                onChange={handleGallerySelect}
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
               />
-              {form.background_url && (
-                <img src={form.background_url} alt="Background preview" className="mt-2 h-24 w-full object-cover rounded-lg border border-gray-200" />
+              {pendingImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {pendingImages.map(({ previewUrl }, i) => (
+                    <div key={i} className="relative">
+                      <img
+                        src={previewUrl}
+                        alt={`Gallery ${i + 1}`}
+                        className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(i)}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 

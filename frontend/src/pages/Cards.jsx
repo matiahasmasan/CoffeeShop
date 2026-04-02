@@ -15,7 +15,7 @@ function MyLoyaltyCard({ card, onClick }) {
     >
       <div
         className="w-full h-36 bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${card.background_url})` }}
+        style={{ backgroundImage: card.images?.[0] ? `url(${card.images[0]})` : "none" }}
       >
         <div className="absolute inset-0 bg-black/30" />
         {card.logo_url && (
