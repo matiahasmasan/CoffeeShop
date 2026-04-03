@@ -65,12 +65,14 @@ export default function LoyaltyCard({
             </button>
           )}
         </div>
-        {card.rating != null && (
+        {card.review_count > 0 ? (
           <div className="flex items-center gap-2 mb-2">
             <StarRating value={card.rating} size="text-sm" />
-            <span className="text-xs text-gray-600">{card.rating}/5</span>
+            <span className="text-xs text-gray-600">{Number(card.rating).toFixed(1)}</span>
             <span className="text-xs text-gray-400">({card.review_count} {card.review_count === 1 ? "review" : "reviews"})</span>
           </div>
+        ) : (
+          <p className="text-xs text-gray-400 mb-2">No reviews yet</p>
         )}
         <p className="text-xs text-gray-500 leading-relaxed">{card.address}</p>
       </div>

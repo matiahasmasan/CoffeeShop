@@ -41,20 +41,6 @@ function StarSelector({ value, onChange }) {
   );
 }
 
-function StarDisplay({ value }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`text-base ${i <= value ? "text-yellow-400" : "text-gray-300"}`}
-        >
-          ★
-        </span>
-      ))}
-    </span>
-  );
-}
 
 function ImageScroller({ images }) {
   const [current, setCurrent] = useState(0);
@@ -202,6 +188,7 @@ export default function CardDetail() {
     const data = await res.json();
     if (data.succes) {
       await fetchReviews();
+      setShowForm(false);
     } else {
       setError(data.mesaj || "Eroare la trimitere.");
     }
@@ -341,7 +328,7 @@ export default function CardDetail() {
         <div ref={reviewsRef} className="bg-white rounded-xl shadow-sm p-5 mb-4">
           <h2 className="font-semibold text-gray-800 mb-1">Recenzii și evaluări</h2>
           <div className="flex items-center gap-2 mb-4">
-            <StarDisplay value={Math.round(avgRating)} />
+            <StarRating value={avgRating} />
             <span className="text-sm text-gray-500">
               {avgRating > 0 ? avgRating.toFixed(1) : "—"} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
             </span>
@@ -366,7 +353,7 @@ export default function CardDetail() {
                       {new Date(r.created_at).toLocaleDateString("ro-RO")}
                     </span>
                   </div>
-                  <StarDisplay value={r.rating} />
+                  <StarRating value={r.rating} />
                   {r.comment && (
                     <p className="text-sm text-gray-600 mt-2">{r.comment}</p>
                   )}
