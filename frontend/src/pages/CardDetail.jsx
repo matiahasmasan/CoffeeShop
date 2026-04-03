@@ -123,6 +123,7 @@ function ImageScroller({ images }) {
 
 export default function CardDetail() {
   const { id } = useParams();
+  const reviewsRef = useRef(null);
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
@@ -274,9 +275,12 @@ export default function CardDetail() {
               {avgRating.toFixed(1)}
             </span>
           )}
-          <span className="text-sm text-gray-400 ml-1">
+          <button
+            onClick={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="text-sm text-indigo-500 hover:underline ml-1"
+          >
             ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
-          </span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 text-gray-600 mb-4">
@@ -333,7 +337,7 @@ export default function CardDetail() {
         </div>
 
         {/* Reviews */}
-        <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+        <div ref={reviewsRef} className="bg-white rounded-xl shadow-sm p-5 mb-4">
           <h2 className="font-semibold text-gray-800 mb-3">
             {myReview ? "Review-ul tău" : "Adaugă un review"}
           </h2>
