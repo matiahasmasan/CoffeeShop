@@ -19,7 +19,6 @@ export default function AddStore() {
     facebook: "",
     website: "",
     maps_link: "",
-    rating: "",
   });
 
   const handleChange = (e) => {
@@ -97,7 +96,6 @@ export default function AddStore() {
       email: form.email || null,
       links: Object.keys(links).length > 0 ? JSON.stringify(links) : null,
       maps_link: form.maps_link || null,
-      rating: form.rating || null,
     };
 
     try {
@@ -134,7 +132,6 @@ export default function AddStore() {
     { name: "facebook", label: "Facebook URL" },
     { name: "website", label: "Website URL" },
     { name: "maps_link", label: "Google Maps URL" },
-    { name: "rating", label: "Rating (0-5)", type: "number" },
   ];
 
   return (
