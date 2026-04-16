@@ -27,8 +27,13 @@ export default function Settings() {
             Logout
           </button>
         </div>
-        <div className="text-center py-16">
-          <p className="text-gray-500">Settings page coming soon...</p>
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            className="flex items-center px-4 py-2 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm"
+          >
+            Listează-ți afacerea
+          </button>
         </div>
       </div>
 

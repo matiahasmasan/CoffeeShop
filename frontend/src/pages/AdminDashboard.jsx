@@ -86,6 +86,15 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        <div className="flex items-center mb-4">
+          <button
+            onClick={() => navigate("/admin/add-store")}
+            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
+          >
+            + Adaugă Magazin
+          </button>
+        </div>
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h3 className="font-bold text-gray-800 text-lg">Magazine</h3>
