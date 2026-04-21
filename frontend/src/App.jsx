@@ -85,6 +85,15 @@ function App() {
           }
         />
 
+        <Route
+          path="/admin/edit-store/:id"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <AddStore />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

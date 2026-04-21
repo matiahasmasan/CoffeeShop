@@ -1,11 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function AddStore() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pendingImages, setPendingImages] = useState([]); // { file, previewUrl }
+  const [existingImages, setExistingImages] = useState([]); // [{ id, url }]
 
   const [form, setForm] = useState({
     name: "",
@@ -20,6 +24,47 @@ export default function AddStore() {
     website: "",
     maps_link: "",
   });
+
+  useEffect(() => {
+    if (!isEdit) return;
+    const fetchStore = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:8000/api/stores/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.mesaj || "Eroare la încărcare.");
+
+        let links = {};
+        if (data.links) {
+          try {
+            links = typeof data.links === "string" ? JSON.parse(data.links) : data.links;
+          } catch {
+            links = {};
+          }
+        }
+
+        setForm({
+          name: data.name || "",
+          address: data.address || "",
+          logo_url: data.logo_url || "",
+          description: data.description || "",
+          hours: data.hours || "",
+          phone: data.phone || "",
+          email: data.email || "",
+          instagram: links.instagram || "",
+          facebook: links.facebook || "",
+          website: links.website || "",
+          maps_link: data.maps_link || "",
+        });
+        setExistingImages(data.images || []);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    fetchStore();
+  }, [id, isEdit]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,6 +106,21 @@ export default function AddStore() {
     setPendingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeExistingImage = async (imageId) => {
+    if (!window.confirm("Ștergi imaginea?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8000/api/store-images/${imageId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Eroare la ștergerea imaginii.");
+      setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const uploadGallery = async (storeId) => {
     if (pendingImages.length === 0) return;
 
@@ -100,8 +160,11 @@ export default function AddStore() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/stores", {
-        method: "POST",
+      const url = isEdit
+        ? `http://localhost:8000/api/stores/${id}`
+        : "http://localhost:8000/api/stores";
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -110,9 +173,10 @@ export default function AddStore() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.mesaj || "Eroare la adăugare.");
+      if (!res.ok) throw new Error(data.mesaj || "Eroare la salvare.");
 
-      await uploadGallery(data.id);
+      const storeId = isEdit ? id : data.id;
+      await uploadGallery(storeId);
       navigate("/adminDashboard");
     } catch (err) {
       setError(err.message);
@@ -137,7 +201,9 @@ export default function AddStore() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
-        <h2 className="text-xl font-semibold text-gray-800">Adaugă Magazin</h2>
+        <h2 className="text-xl font-semibold text-gray-800">
+          {isEdit ? "Editează Magazin" : "Adaugă Magazin"}
+        </h2>
         <button
           onClick={() => navigate("/adminDashboard")}
           className="py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium text-gray-600"
@@ -172,10 +238,37 @@ export default function AddStore() {
               )}
             </div>
 
+            {/* Existing Gallery (edit mode) */}
+            {isEdit && existingImages.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Imagini existente
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {existingImages.map((img) => (
+                    <div key={img.id} className="relative">
+                      <img
+                        src={img.url}
+                        alt={`Existing ${img.id}`}
+                        className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(img.id)}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none hover:bg-red-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Gallery Upload */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Gallery Images
+                {isEdit ? "Adaugă imagini noi" : "Gallery Images"}
               </label>
               <input
                 type="file"
@@ -242,7 +335,11 @@ export default function AddStore() {
                 disabled={loading}
                 className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 rounded-lg transition-colors text-sm font-medium text-white"
               >
-                {loading ? "Se salvează..." : "Adaugă Magazin"}
+                {loading
+                  ? "Se salvează..."
+                  : isEdit
+                  ? "Salvează modificările"
+                  : "Adaugă Magazin"}
               </button>
               <button
                 type="button"

@@ -86,14 +86,14 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        <div className="flex items-center mb-4">
+        {/* <div className="flex items-center mb-4">
           <button
             onClick={() => navigate("/admin/add-store")}
             className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
           >
             + Adaugă Magazin
           </button>
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
@@ -115,6 +115,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-3 font-semibold tracking-wider">Nume</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Adresă</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Detalii</th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">Editare</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Acțiuni</th>
                   </tr>
                 </thead>
@@ -155,6 +156,14 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             <button
+                              onClick={() => navigate(`/admin/edit-store/${store.id}`)}
+                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all"
+                            >
+                              Editează
+                            </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
                               onClick={() => handleDelete(store.id)}
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all"
                             >
@@ -165,7 +174,7 @@ export default function AdminDashboard() {
 
                         {isExpanded && (
                           <tr key={`details-${idx}`} className="bg-indigo-50/40">
-                            <td colSpan={5} className="px-8 py-4">
+                            <td colSpan={6} className="px-8 py-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                                 {extraEntries.length > 0 ? (
                                   extraEntries.map(([key, val]) => (

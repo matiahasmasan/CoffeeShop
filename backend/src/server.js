@@ -201,24 +201,83 @@ app.get("/api/stores", verifyToken, (req, res) => {
 
 app.get("/api/stores/:id", verifyToken, (req, res) => {
   const { id } = req.params;
-  const sql = `
-    SELECT s.*, GROUP_CONCAT(si.url ORDER BY si.display_order SEPARATOR '|||') as images
-    FROM stores s
-    LEFT JOIN store_images si ON si.store_id = s.id
-    WHERE s.id = ?
-    GROUP BY s.id
-  `;
-  con.query(sql, [id], (err, result) => {
+  con.query("SELECT * FROM stores WHERE id = ?", [id], (err, storeResult) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ mesaj: "Eroare la server" });
     }
-    if (result.length > 0) {
-      const row = result[0];
-      res.json({ ...row, images: row.images ? row.images.split("|||") : [] });
-    } else {
-      res.status(404).json({ mesaj: "Store nu a fost gasit" });
+    if (storeResult.length === 0) {
+      return res.status(404).json({ mesaj: "Store nu a fost gasit" });
     }
+    const store = storeResult[0];
+    con.query(
+      "SELECT id, url, display_order FROM store_images WHERE store_id = ? ORDER BY display_order",
+      [id],
+      (err, imagesResult) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+        res.json({ ...store, images: imagesResult });
+      }
+    );
+  });
+});
+
+app.put("/api/stores/:id", verifyToken, (req, res) => {
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+
+  const { id } = req.params;
+  const {
+    name,
+    address,
+    logo_url,
+    description,
+    hours,
+    phone,
+    email,
+    links,
+    maps_link,
+  } = req.body;
+
+  if (!name || !address) {
+    return res
+      .status(400)
+      .json({ mesaj: "Numele și adresa sunt obligatorii." });
+  }
+
+  const sql = `
+    UPDATE stores
+    SET name = ?, address = ?, logo_url = ?, description = ?, hours = ?, phone = ?, email = ?, links = ?, maps_link = ?
+    WHERE id = ?
+  `;
+
+  const values = [
+    name,
+    address,
+    logo_url || null,
+    description || null,
+    hours || null,
+    phone || null,
+    email || null,
+    links || null,
+    maps_link || null,
+    id,
+  ];
+
+  con.query(sql, values, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res
+        .status(500)
+        .json({ mesaj: "Eroare la actualizarea magazinului." });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ mesaj: "Magazinul nu a fost găsit." });
+    }
+    res.json({ succes: true, mesaj: "Magazin actualizat cu succes!" });
   });
 });
 
@@ -249,8 +308,8 @@ app.post("/api/stores", verifyToken, (req, res) => {
 
   const sql = `
     INSERT INTO stores
-      (name, address, logo_url, description, hours, phone, email, links, maps_link, rating)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (name, address, logo_url, description, hours, phone, email, links, maps_link)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
