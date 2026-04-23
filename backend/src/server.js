@@ -387,6 +387,19 @@ app.delete("/api/store-images/:imageId", verifyToken, (req, res) => {
   });
 });
 
+// Preluare toți utilizatorii pentru asignare ca staff
+app.get("/api/users", verifyToken, (req, res) => {
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+  
+  const sql = "SELECT id, firstName, lastName, email FROM users";
+  con.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    res.json(result);
+  });
+});
+
 app.post("/api/store-staff", verifyToken, (req, res) => {
   if (req.user.role !== 1) {
     return res.status(403).json({ mesaj: "Acces interzis." });

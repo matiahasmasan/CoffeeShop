@@ -9,6 +9,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState(null);
   const [visibleCount, setVisibleCount] = useState(5);
+  const [users, setUsers] = useState([]);
+  const [managingStoreId, setManagingStoreId] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -29,6 +32,26 @@ export default function AdminDashboard() {
     };
     fetchStores();
   }, []);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:8000/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUsers(data);
+        }
+      } catch (err) {
+        console.error("Eroare preluare utilizatori", err);
+      }
+    };
+    if (user?.role_id === 1) {
+      fetchUsers();
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -51,6 +74,37 @@ export default function AdminDashboard() {
       setStores((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleAssignOwner = async (storeId) => {
+    if (!selectedUserId) {
+      alert("Te rog să alegi un utilizator.");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8000/api/store-staff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: selectedUserId,
+          store_id: storeId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Utilizator asociat cu succes!");
+        setManagingStoreId(null);
+        setSelectedUserId("");
+      } else {
+        alert(data.mesaj || "Eroare la asociere.");
+      }
+    } catch (err) {
+      alert("Eroare de conexiune la server.");
     }
   };
 
@@ -156,12 +210,46 @@ export default function AdminDashboard() {
                             </button>
                           </td>
                           <td className="px-6 py-4">
-                            <button
-                              onClick={() => navigate(`/admin/store-owner/${store.id}`)}
-                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
-                            >
-                              Gestionare Owner
-                            </button>
+                            {managingStoreId === store.id ? (
+                              <div className="flex flex-col gap-2 min-w-[160px]">
+                                <select
+                                  value={selectedUserId}
+                                  onChange={(e) => setSelectedUserId(e.target.value)}
+                                  className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                >
+                                  <option value="">-- Alege un user --</option>
+                                  {users.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                      {u.firstName} {u.lastName} ({u.email})
+                                    </option>
+                                  ))}
+                                </select>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleAssignOwner(store.id)}
+                                    className="flex-1 px-2 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                                  >
+                                    Salvează
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setManagingStoreId(null);
+                                      setSelectedUserId("");
+                                    }}
+                                    className="flex-1 px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                                  >
+                                    Anulează
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setManagingStoreId(store.id)}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
+                              >
+                                Gestionare Owner
+                              </button>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <button
