@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getCards } from "../data/cards";
 import LogoutButton from "../components/LogoutButton";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -38,7 +40,7 @@ export default function AdminDashboard() {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8000/api/users", {
+        const res = await fetch(`${API}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -67,7 +69,7 @@ export default function AdminDashboard() {
     if (!window.confirm("Are you sure you want to delete this store?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/stores/${id}`, {
+      const res = await fetch(`${API}/api/stores/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -85,7 +87,7 @@ export default function AdminDashboard() {
     }
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/store-staff", {
+      const res = await fetch(`${API}/api/store-staff`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -4,6 +4,8 @@ import QRCode from "../components/QRCode";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function QRPage() {
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
@@ -16,7 +18,7 @@ export default function QRPage() {
     setError(null);
     try {
       const authToken = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/qr-token", {
+      const res = await fetch(`${API}/api/qr-token`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const data = await res.json();

@@ -5,11 +5,21 @@ import LogoutButton from "../components/LogoutButton";
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [storeName, setStoreName] = useState(null);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) {
       setUser(storedUser);
+      if (storedUser.store_id) {
+        const token = localStorage.getItem("token");
+        fetch(`${import.meta.env.VITE_API_URL}/api/stores/${storedUser.store_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.json())
+          .then((data) => setStoreName(data.name ?? null))
+          .catch(() => {});
+      }
     }
   }, []);
 
@@ -22,7 +32,7 @@ export default function OwnerDashboard() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
         <h2 className="text-xl font-semibold text-gray-800">
-          Owner Dashboard (Magazin: {user?.store_id})
+          Owner Dashboard — {storeName ?? "Loading..."}
         </h2>
         <div className="flex items-center gap-4">
           <LogoutButton onClick={handleLogout} />

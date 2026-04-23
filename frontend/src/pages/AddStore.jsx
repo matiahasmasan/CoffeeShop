@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_URL;
+
 export default function AddStore() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -30,7 +32,7 @@ export default function AddStore() {
     const fetchStore = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8000/api/stores/${id}`, {
+        const res = await fetch(`${API}/api/stores/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -82,7 +84,7 @@ export default function AddStore() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8000/api/upload", {
+      const res = await fetch(`${API}/api/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -114,7 +116,7 @@ export default function AddStore() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:8000/api/store-images/${imageId}`,
+        `${API}/api/store-images/${imageId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -135,7 +137,7 @@ export default function AddStore() {
 
     const token = localStorage.getItem("token");
     const res = await fetch(
-      `http://localhost:8000/api/stores/${storeId}/images`,
+      `${API}/api/stores/${storeId}/images`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -170,8 +172,8 @@ export default function AddStore() {
     try {
       const token = localStorage.getItem("token");
       const url = isEdit
-        ? `http://localhost:8000/api/stores/${id}`
-        : "http://localhost:8000/api/stores";
+        ? `${API}/api/stores/${id}`
+        : `${API}/api/stores`;
       const res = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         headers: {

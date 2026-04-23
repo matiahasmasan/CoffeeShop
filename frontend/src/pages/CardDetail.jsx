@@ -17,7 +17,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
-const API = "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL;
 
 function StarSelector({ value, onChange }) {
   const [hovered, setHovered] = useState(0);
