@@ -138,18 +138,28 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     }
 
     const token = generateToken(user);
+    const userPayload = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      role_id: user.role_id,
+    };
 
-    return res.json({
-      succes: true,
-      mesaj: "Te-ai logat!",
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        role_id: user.role_id,
-      },
-    });
+    if (user.role_id === 3) {
+      const storeStaffSql = "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+      con.query(storeStaffSql, [user.id], (storeErr, storeResult) => {
+        if (storeErr) {
+          console.error("Eroare la preluarea magazinului pentru staff:", storeErr);
+          return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+        }
+        if (storeResult.length > 0) {
+          userPayload.store_id = storeResult[0].store_id;
+        }
+        return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+      });
+    } else {
+      return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+    }
   });
 });
 

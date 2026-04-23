@@ -13,6 +13,7 @@ import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import OwnerDashboard from "./pages/OwnerDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
 import Cards from "./pages/Cards.jsx";
@@ -25,6 +26,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/qr" element={<QRPage />} />
+        <Route path="/owner-dashboard" element={<OwnerDashboard />} />
 
         <Route
           path="/home"
