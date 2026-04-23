@@ -26,7 +26,11 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/qr" element={<QRPage />} />
-        <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+        <Route path="/owner-dashboard" element={
+          <ProtectedRoute allowedRoles={[3]}>
+            <OwnerDashboard />
+          </ProtectedRoute>
+        } />
 
         <Route
           path="/home"
