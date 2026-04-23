@@ -41,7 +41,6 @@ function StarSelector({ value, onChange }) {
   );
 }
 
-
 function ImageScroller({ images }) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef(null);
@@ -57,7 +56,9 @@ function ImageScroller({ images }) {
   const prev = () => setCurrent((i) => (i === 0 ? images.length - 1 : i - 1));
   const next = () => setCurrent((i) => (i === images.length - 1 ? 0 : i + 1));
 
-  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
   const onTouchEnd = (e) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
@@ -67,7 +68,8 @@ function ImageScroller({ images }) {
   };
 
   return (
-    <div className="w-full h-56 rounded-lg overflow-hidden mb-4 relative select-none"
+    <div
+      className="w-full h-56 rounded-lg overflow-hidden mb-4 relative select-none"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -264,7 +266,9 @@ export default function CardDetail() {
             </span>
           )}
           <button
-            onClick={() => reviewsRef.current?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() =>
+              reviewsRef.current?.scrollIntoView({ behavior: "smooth" })
+            }
             className="text-sm text-indigo-500 hover:underline ml-1"
           >
             ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
@@ -325,28 +329,41 @@ export default function CardDetail() {
         </div>
 
         {/* Reviews */}
-        <div ref={reviewsRef} className="bg-white rounded-xl shadow-sm p-5 mb-4">
-          <h2 className="font-semibold text-gray-800 mb-1">Recenzii și evaluări</h2>
+        <div
+          ref={reviewsRef}
+          className="bg-white rounded-xl shadow-sm p-5 mb-4"
+        >
+          <h2 className="font-semibold text-gray-800 mb-1">Reviews</h2>
           <div className="flex items-center gap-2 mb-4">
             <StarRating value={avgRating} />
             <span className="text-sm text-gray-500">
-              {avgRating > 0 ? avgRating.toFixed(1) : "—"} · {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+              {avgRating > 0 ? avgRating.toFixed(1) : "—"} · {reviews.length}{" "}
+              {reviews.length === 1 ? "review" : "reviews"}
             </span>
           </div>
 
           {reviewsLoading ? (
-            <p className="text-center text-gray-400 text-sm">Se încarcă reviews...</p>
+            <p className="text-center text-gray-400 text-sm">
+              Se încarcă reviews...
+            </p>
           ) : reviews.length === 0 ? (
-            <p className="text-gray-400 text-sm py-2">Niciun review încă. Fii primul!</p>
+            <p className="text-gray-400 text-sm py-2">
+              Niciun review încă. Fii primul!
+            </p>
           ) : (
             <div className="space-y-3 mb-4">
               {reviews.map((r) => (
-                <div key={r.id} className="border border-gray-100 rounded-xl p-4">
+                <div
+                  key={r.id}
+                  className="border border-gray-100 rounded-xl p-4"
+                >
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-gray-800 text-sm">
                       {r.firstName} {r.lastName}
                       {r.user_id === user?.id && (
-                        <span className="ml-2 text-xs text-indigo-500 font-normal">(tu)</span>
+                        <span className="ml-2 text-xs text-indigo-500 font-normal">
+                          (tu)
+                        </span>
                       )}
                     </span>
                     <span className="text-xs text-gray-400">
@@ -363,7 +380,10 @@ export default function CardDetail() {
           )}
 
           {showForm ? (
-            <form onSubmit={handleSubmit} className="space-y-3 mt-4 border-t border-gray-100 pt-4">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-3 mt-4 border-t border-gray-100 pt-4"
+            >
               <StarSelector value={rating} onChange={setRating} />
               <textarea
                 value={comment}
@@ -380,14 +400,14 @@ export default function CardDetail() {
                   onClick={() => setShowForm(false)}
                   className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-semibold transition-colors hover:bg-gray-50"
                 >
-                  Anulează
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
                 >
-                  {submitting ? "Se trimite..." : myReview ? "Actualizează" : "Trimite"}
+                  {submitting ? "Sending..." : myReview ? "Update" : "Send"}
                 </button>
               </div>
             </form>
@@ -396,7 +416,7 @@ export default function CardDetail() {
               onClick={() => setShowForm(true)}
               className="w-full py-2.5 mt-2 border border-indigo-500 text-indigo-600 hover:bg-indigo-50 rounded-lg text-sm font-semibold transition-colors"
             >
-              {myReview ? "Editează review" : "Adaugă review"}
+              {myReview ? "Edit review" : "Add review"}
             </button>
           )}
         </div>

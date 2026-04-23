@@ -114,14 +114,10 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
-        <h2 className="text-xl font-semibold text-gray-800">Dashboard Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-800">
+          CoffeeShop Dashboard
+        </h2>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600 italic">
-            Welcome, {user?.name || "Admin"}
-          </span>
-          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-            A
-          </div>
           <LogoutButton onClick={handleLogout} />
         </div>
       </header>
@@ -147,27 +143,41 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
-            <h3 className="font-bold text-gray-800 text-lg">Magazine</h3>
+            <h3 className="font-bold text-gray-800 text-lg">Shops</h3>
           </div>
 
           {loading ? (
             <div className="p-6 text-center text-gray-400">Se încarcă...</div>
           ) : stores.length === 0 ? (
             <div className="p-6 text-center text-gray-400">
-              Nu există magazine înregistrate.
+              No existing shops.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
                   <tr>
-                    <th className="px-6 py-3 font-semibold tracking-wider">ID</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Nume</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Adresă</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Detalii</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Owner</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Editare</th>
-                    <th className="px-6 py-3 font-semibold tracking-wider">Acțiuni</th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Address
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Details
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Owner
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Edit
+                    </th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -175,7 +185,7 @@ export default function AdminDashboard() {
                     const isExpanded = expandedRow === idx;
 
                     const extraEntries = Object.entries(store).filter(
-                      ([key]) => !PRIMARY_KEYS.includes(key)
+                      ([key]) => !PRIMARY_KEYS.includes(key),
                     );
 
                     return (
@@ -210,10 +220,12 @@ export default function AdminDashboard() {
                               <div className="flex flex-col gap-2 min-w-[160px]">
                                 <select
                                   value={selectedUserId}
-                                  onChange={(e) => setSelectedUserId(e.target.value)}
+                                  onChange={(e) =>
+                                    setSelectedUserId(e.target.value)
+                                  }
                                   className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                 >
-                                  <option value="">-- Alege un user --</option>
+                                  <option value="">-- Choose an user --</option>
                                   {users.map((u) => (
                                     <option key={u.id} value={u.id}>
                                       {u.firstName} {u.lastName} ({u.email})
@@ -225,7 +237,7 @@ export default function AdminDashboard() {
                                     onClick={() => handleAssignOwner(store.id)}
                                     className="flex-1 px-2 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
                                   >
-                                    Salvează
+                                    Save
                                   </button>
                                   <button
                                     onClick={() => {
@@ -234,7 +246,7 @@ export default function AdminDashboard() {
                                     }}
                                     className="flex-1 px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                                   >
-                                    Anulează
+                                    Cancel
                                   </button>
                                 </div>
                               </div>
@@ -249,7 +261,9 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             <button
-                              onClick={() => navigate(`/admin/edit-store/${store.id}`)}
+                              onClick={() =>
+                                navigate(`/admin/edit-store/${store.id}`)
+                              }
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all"
                             >
                               Editează
@@ -266,12 +280,18 @@ export default function AdminDashboard() {
                         </tr>
 
                         {isExpanded && (
-                          <tr key={`details-${idx}`} className="bg-indigo-50/40">
+                          <tr
+                            key={`details-${idx}`}
+                            className="bg-indigo-50/40"
+                          >
                             <td colSpan={7} className="px-8 py-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                                 {extraEntries.length > 0 ? (
                                   extraEntries.map(([key, val]) => (
-                                    <div key={key} className="flex flex-col gap-0.5 min-w-0">
+                                    <div
+                                      key={key}
+                                      className="flex flex-col gap-0.5 min-w-0"
+                                    >
                                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                                         {key}
                                       </span>

@@ -36,9 +36,9 @@ export default function QRPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-        <h2 className="text-xl font-bold text-gray-800">Codul tău QR</h2>
+        <h2 className="text-xl font-bold text-gray-800">Your QR Code</h2>
 
-        {loading && <p className="text-gray-400 text-sm">Se generează...</p>}
+        {loading && <p className="text-gray-400 text-sm">Waiting...</p>}
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
@@ -48,18 +48,11 @@ export default function QRPage() {
           onClick={fetchQRToken}
           className="mt-2 px-6 py-2 bg-indigo-500 text-white text-sm font-semibold rounded-lg hover:bg-indigo-600 transition-colors"
         >
-          Regenerează
-        </button>
-
-        <button
-          onClick={() => navigate(-1)}
-          className="px-6 py-2 bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          Înapoi
+          Generate
         </button>
 
         <p className="text-xs text-gray-400 text-center">
-          Prezintă acest cod la casă. Expiră în 5 minute.
+          Show this QR code to customers to let them check in at your business.
         </p>
       </div>
       <Footer activeTab={activeTab} onTabChange={setActiveTab} />

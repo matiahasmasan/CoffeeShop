@@ -25,15 +25,16 @@ export default function OwnerDashboard() {
           Owner Dashboard (Magazin: {user?.store_id})
         </h2>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600 italic">
-            Welcome, {user?.firstName || "Owner"}
-          </span>
           <LogoutButton onClick={handleLogout} />
         </div>
       </header>
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="font-bold text-gray-800 text-lg">Aici va fi panoul de control pentru managerul magazinului.</h3>
+          <h3 className="font-bold text-gray-800 text-lg">
+            <span className="text-sm text-gray-600 italic">
+              Welcome, {user?.firstName || "Owner"}
+            </span>
+          </h3>
         </div>
       </main>
     </div>

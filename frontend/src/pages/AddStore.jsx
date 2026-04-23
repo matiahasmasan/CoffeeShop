@@ -39,7 +39,10 @@ export default function AddStore() {
         let links = {};
         if (data.links) {
           try {
-            links = typeof data.links === "string" ? JSON.parse(data.links) : data.links;
+            links =
+              typeof data.links === "string"
+                ? JSON.parse(data.links)
+                : data.links;
           } catch {
             links = {};
           }
@@ -110,10 +113,13 @@ export default function AddStore() {
     if (!window.confirm("Ștergi imaginea?")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8000/api/store-images/${imageId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `http://localhost:8000/api/store-images/${imageId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (!res.ok) throw new Error("Eroare la ștergerea imaginii.");
       setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
     } catch (err) {
@@ -128,11 +134,14 @@ export default function AddStore() {
     pendingImages.forEach(({ file }) => formData.append("images", file));
 
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:8000/api/stores/${storeId}/images`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    const res = await fetch(
+      `http://localhost:8000/api/stores/${storeId}/images`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
     if (!res.ok) throw new Error("Eroare la upload galerie.");
   };
 
@@ -221,7 +230,6 @@ export default function AddStore() {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
             {/* Logo Upload */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -234,7 +242,11 @@ export default function AddStore() {
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
               />
               {form.logo_url && (
-                <img src={form.logo_url} alt="Logo preview" className="mt-2 h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                <img
+                  src={form.logo_url}
+                  alt="Logo preview"
+                  className="mt-2 h-16 w-16 object-cover rounded-lg border border-gray-200"
+                />
               )}
             </div>
 
@@ -338,15 +350,15 @@ export default function AddStore() {
                 {loading
                   ? "Se salvează..."
                   : isEdit
-                  ? "Salvează modificările"
-                  : "Adaugă Magazin"}
+                    ? "Salvează modificările"
+                    : "Adaugă Magazin"}
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/adminDashboard")}
                 className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium text-gray-600"
               >
-                Anulează
+                Cancel
               </button>
             </div>
           </form>
