@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCards } from "../data/cards";
+import LogoutButton from "../components/LogoutButton";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -121,12 +122,7 @@ export default function AdminDashboard() {
           <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
             A
           </div>
-          <button
-            onClick={handleLogout}
-            className="py-2 px-4 bg-red-500/20 hover:bg-red-500/40 rounded-lg transition-colors text-sm font-medium text-red-700"
-          >
-            Log out
-          </button>
+          <LogoutButton onClick={handleLogout} />
         </div>
       </header>
 

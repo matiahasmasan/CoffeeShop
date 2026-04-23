@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LogoutButton from "../components/LogoutButton";
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
@@ -27,12 +28,7 @@ export default function OwnerDashboard() {
           <span className="text-sm text-gray-600 italic">
             Welcome, {user?.firstName || "Owner"}
           </span>
-          <button
-            onClick={handleLogout}
-            className="py-2 px-4 bg-red-500/20 hover:bg-red-500/40 rounded-lg transition-colors text-sm font-medium text-red-700"
-          >
-            Log out
-          </button>
+          <LogoutButton onClick={handleLogout} />
         </div>
       </header>
       <main className="flex-1 p-8">
