@@ -420,7 +420,16 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
       }
       return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
     }
-    res.status(201).json({ succes: true, mesaj: "Utilizator asociat cu succes magazinului." });
+    
+    // Actualizăm rolul utilizatorului la 3 (Store Owner / Staff), dar protejăm conturile de Admin (role_id = 1)
+    const updateRoleSql = "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
+    con.query(updateRoleSql, [user_id], (updateErr) => {
+      if (updateErr) {
+        console.error("Eroare la actualizarea rolului:", updateErr);
+        return res.status(201).json({ succes: true, mesaj: "Utilizator asociat, dar a apărut o eroare la actualizarea rolului." });
+      }
+      res.status(201).json({ succes: true, mesaj: "Utilizator asociat cu succes și rolul a fost actualizat." });
+    });
   });
 });
 
