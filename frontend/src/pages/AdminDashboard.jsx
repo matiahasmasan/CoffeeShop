@@ -115,6 +115,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-3 font-semibold tracking-wider">Nume</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Adresă</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Detalii</th>
+                    <th className="px-6 py-3 font-semibold tracking-wider">Owner</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Editare</th>
                     <th className="px-6 py-3 font-semibold tracking-wider">Acțiuni</th>
                   </tr>
@@ -156,6 +157,14 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             <button
+                              onClick={() => navigate(`/admin/store-owner/${store.id}`)}
+                              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
+                            >
+                              Gestionare Owner
+                            </button>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
                               onClick={() => navigate(`/admin/edit-store/${store.id}`)}
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all"
                             >
@@ -174,7 +183,7 @@ export default function AdminDashboard() {
 
                         {isExpanded && (
                           <tr key={`details-${idx}`} className="bg-indigo-50/40">
-                            <td colSpan={6} className="px-8 py-4">
+                            <td colSpan={7} className="px-8 py-4">
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                                 {extraEntries.length > 0 ? (
                                   extraEntries.map(([key, val]) => (

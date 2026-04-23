@@ -387,6 +387,30 @@ app.delete("/api/store-images/:imageId", verifyToken, (req, res) => {
   });
 });
 
+app.post("/api/store-staff", verifyToken, (req, res) => {
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+
+  const { user_id, store_id } = req.body;
+
+  if (!user_id || !store_id) {
+    return res.status(400).json({ mesaj: "user_id și store_id sunt obligatorii." });
+  }
+
+  const sql = "INSERT INTO store_staff (user_id, store_id) VALUES (?, ?)";
+  con.query(sql, [user_id, store_id], (err, result) => {
+    if (err) {
+      console.error(err);
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ mesaj: "Utilizatorul este deja asociat acestui magazin." });
+      }
+      return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
+    }
+    res.status(201).json({ succes: true, mesaj: "Utilizator asociat cu succes magazinului." });
+  });
+});
+
 // Get all loyalty cards for the logged-in user
 app.get("/api/cards", verifyToken, (req, res) => {
   const userId = req.user.id;
