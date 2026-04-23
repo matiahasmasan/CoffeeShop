@@ -19,7 +19,7 @@ export default function Register() {
     setLoading(true);
 
     if(password.length < 8){
-        return alert("Parola trebuie sa aiba minim 8 caractere.");
+        return alert("Password must be at least 8 characters.");
     }
     try{
     const response = await fetch("http://localhost:8000/api/register", {
@@ -38,11 +38,11 @@ export default function Register() {
     if (response.ok && data.success) {
         navigate("/login");
       } else {
-        alert(data.message || "A apărut o eroare la înregistrare.");
+        alert(data.message || "An error occurred during registration.");
       }
     } 
     catch (err) {
-      alert("Eroare de conexiune la server.");
+      alert("Connection error. Please try again.");
     } finally {
       setLoading(false);
     }

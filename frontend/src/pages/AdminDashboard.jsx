@@ -46,7 +46,7 @@ export default function AdminDashboard() {
           setUsers(data);
         }
       } catch (err) {
-        console.error("Eroare preluare utilizatori", err);
+        console.error("Error fetching users", err);
       }
     };
     if (user?.role_id === 1) {
@@ -64,14 +64,14 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Ești sigur că vrei să ștergi acest magazin?")) return;
+    if (!window.confirm("Are you sure you want to delete this store?")) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:8000/api/stores/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Eroare la ștergere.");
+      if (!res.ok) throw new Error("Error deleting store.");
       setStores((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       alert(err.message);
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
 
   const handleAssignOwner = async (storeId) => {
     if (!selectedUserId) {
-      alert("Te rog să alegi un utilizator.");
+      alert("Please select a user.");
       return;
     }
     try {
@@ -98,14 +98,14 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Utilizator asociat cu succes!");
+        alert("User assigned successfully!");
         setManagingStoreId(null);
         setSelectedUserId("");
       } else {
-        alert(data.mesaj || "Eroare la asociere.");
+        alert(data.mesaj || "Error assigning user.");
       }
     } catch (err) {
-      alert("Eroare de conexiune la server.");
+      alert("Connection error. Please try again.");
     }
   };
 
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             onClick={() => navigate("/admin/add-store")}
             className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
           >
-            + Adaugă Magazin
+            + Add Store
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
             onClick={() => navigate("/admin/add-store")}
             className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
           >
-            + Adaugă Magazin
+            + Add Store
           </button>
         </div> */}
 
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
           </div>
 
           {loading ? (
-            <div className="p-6 text-center text-gray-400">Se încarcă...</div>
+            <div className="p-6 text-center text-gray-400">Loading...</div>
           ) : stores.length === 0 ? (
             <div className="p-6 text-center text-gray-400">
               No existing shops.
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                                   : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700"
                               }`}
                             >
-                              {isExpanded ? "▲ Ascunde" : "▼ Mai mult"}
+                              {isExpanded ? "▲ Hide" : "▼ More"}
                             </button>
                           </td>
                           <td className="px-6 py-4">
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
                                 onClick={() => setManagingStoreId(store.id)}
                                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
                               >
-                                Gestionare Owner
+                                Manage Owner
                               </button>
                             )}
                           </td>
@@ -266,7 +266,7 @@ export default function AdminDashboard() {
                               }
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all"
                             >
-                              Editează
+                              Edit
                             </button>
                           </td>
                           <td className="px-6 py-4">
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                               onClick={() => handleDelete(store.id)}
                               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all"
                             >
-                              Șterge
+                              Delete
                             </button>
                           </td>
                         </tr>
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
                                   ))
                                 ) : (
                                   <span className="text-sm text-gray-400 italic">
-                                    Nu există informații suplimentare.
+                                    No additional information.
                                   </span>
                                 )}
                               </div>
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
                     onClick={() => setVisibleCount((prev) => prev + 5)}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                   >
-                    Afișează mai multe ({stores.length - visibleCount} rămase)
+                    Show more ({stores.length - visibleCount} remaining)
                   </button>
                 </div>
               )}

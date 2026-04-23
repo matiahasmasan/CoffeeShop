@@ -22,7 +22,7 @@ export default function QRPage() {
       const data = await res.json();
       setToken(data.qr_token);
     } catch (err) {
-      setError("Nu s-a putut genera codul QR.");
+      setError("Could not generate QR code.");
     } finally {
       setLoading(false);
     }

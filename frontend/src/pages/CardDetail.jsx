@@ -175,7 +175,7 @@ export default function CardDetail() {
     e.preventDefault();
     setError("");
     if (rating === 0) {
-      setError("Selectează un rating.");
+      setError("Please select a rating.");
       return;
     }
     setSubmitting(true);
@@ -192,7 +192,7 @@ export default function CardDetail() {
       await fetchReviews();
       setShowForm(false);
     } else {
-      setError(data.mesaj || "Eroare la trimitere.");
+      setError(data.mesaj || "Error submitting review.");
     }
     setSubmitting(false);
   };
@@ -344,11 +344,11 @@ export default function CardDetail() {
 
           {reviewsLoading ? (
             <p className="text-center text-gray-400 text-sm">
-              Se încarcă reviews...
+              Loading reviews...
             </p>
           ) : reviews.length === 0 ? (
             <p className="text-gray-400 text-sm py-2">
-              Niciun review încă. Fii primul!
+              No reviews yet. Be the first!
             </p>
           ) : (
             <div className="space-y-3 mb-4">
@@ -362,12 +362,12 @@ export default function CardDetail() {
                       {r.firstName} {r.lastName}
                       {r.user_id === user?.id && (
                         <span className="ml-2 text-xs text-indigo-500 font-normal">
-                          (tu)
+                          (you)
                         </span>
                       )}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {new Date(r.created_at).toLocaleDateString("ro-RO")}
+                      {new Date(r.created_at).toLocaleDateString("en-US")}
                     </span>
                   </div>
                   <StarRating value={r.rating} />
@@ -388,7 +388,7 @@ export default function CardDetail() {
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Comentariu (opțional)"
+                placeholder="Comment (optional)"
                 maxLength={500}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
