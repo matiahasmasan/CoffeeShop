@@ -10,7 +10,7 @@ const mockQuery = vi.hoisted(() =>
   })
 );
 
-// Mock pentru MySQL
+// Mock for MySQL
 vi.mock("mysql", () => {
   return {
     default: {
@@ -29,7 +29,7 @@ let userToken;
 beforeAll(() => {
   process.env.JWT_SECRET = JWT_SECRET;
   
-  // Generăm token-uri valide pe care să le folosim în request-uri
+  // valid tokends for admin and user
   adminToken = jwt.sign({ id: 1, email: "admin@test.com", role: 1 }, JWT_SECRET, { expiresIn: "1h" });
   userToken = jwt.sign({ id: 2, email: "user@test.com", role: 2 }, JWT_SECRET, { expiresIn: "1h" });
 });
@@ -60,5 +60,48 @@ describe("Autorizare (RBAC) - Magazine", () => {
       .send({ user_id: 2, store_id: 1 });
       
     expect(res.status).toBe(403);
+  });
+});
+
+describe("Validări și Funcționalitate - Magazine", () => {
+  test("Admin primește 400 dacă lipsește numele la adăugarea unui magazin", async () => {
+    const res = await request(app)
+      .post("/api/stores")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ address: "Strada Fără Nume" }); // lipsește 'name'
+    
+    expect(res.status).toBe(400);
+    expect(res.body.mesaj).toBe("Numele și adresa sunt obligatorii.");
+  });
+
+  test("Admin primește 400 dacă lipsește adresa la modificarea unui magazin", async () => {
+    const res = await request(app)
+      .put("/api/stores/1")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "Cafenea Nouă" }); // lipsește 'address'
+      
+    expect(res.status).toBe(400);
+    expect(res.body.mesaj).toBe("Numele și adresa sunt obligatorii.");
+  });
+
+  test("GET magazin inexistent returnează 404 Not Found", async () => {
+    // Datorită modului în care am făcut mock la baza de date (returnează mereu []), 
+    // orice request după ID ar trebui să pice elegant în 404.
+    const res = await request(app)
+      .get("/api/stores/9999")
+      .set("Authorization", `Bearer ${userToken}`);
+      
+    expect(res.status).toBe(404);
+    expect(res.body.mesaj).toBe("Store nu a fost gasit");
+  });
+
+  test("Asignare personal: eroare 400 dacă lipsesc datele", async () => {
+    const res = await request(app)
+      .post("/api/store-staff")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ store_id: 1 }); // lipsește 'user_id'
+      
+    expect(res.status).toBe(400);
+    expect(res.body.mesaj).toBe("user_id și store_id sunt obligatorii.");
   });
 });
