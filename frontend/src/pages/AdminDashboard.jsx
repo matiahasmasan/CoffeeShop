@@ -101,6 +101,23 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) {
         alert("User assigned successfully!");
+        const assignedUser = users.find(
+          (u) => u.id === parseInt(selectedUserId, 10),
+        );
+        if (assignedUser) {
+          setStores((prevStores) =>
+            prevStores.map((store) =>
+              store.id === storeId
+                ? {
+                    ...store,
+                    owner_id: assignedUser.id,
+                    ownerFirstName: assignedUser.firstName,
+                    ownerLastName: assignedUser.lastName,
+                  }
+                : store,
+            ),
+          );
+        }
         setManagingStoreId(null);
         setSelectedUserId("");
       } else {
@@ -133,15 +150,6 @@ export default function AdminDashboard() {
             + Add Store
           </button>
         </div>
-
-        {/* <div className="flex items-center mb-4">
-          <button
-            onClick={() => navigate("/admin/add-store")}
-            className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
-          >
-            + Add Store
-          </button>
-        </div> */}
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
@@ -254,10 +262,17 @@ export default function AdminDashboard() {
                               </div>
                             ) : (
                               <button
-                                onClick={() => setManagingStoreId(store.id)}
+                                onClick={() => {
+                                  setManagingStoreId(store.id);
+                                  setSelectedUserId(
+                                    store.owner_id ? String(store.owner_id) : "",
+                                  );
+                                }}
                                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
                               >
-                                Manage Owner
+                                {store.ownerFirstName
+                                  ? `${store.ownerFirstName} ${store.ownerLastName}`
+                                  : "Manage Owner"}
                               </button>
                             )}
                           </td>

@@ -23,9 +23,13 @@ vi.mock("mysql", () => {
 });
 
 const JWT_SECRET = "test_secret";
+let adminToken;
+let userToken;
 
 beforeAll(() => {
   process.env.JWT_SECRET = JWT_SECRET;
+  adminToken = jwt.sign({ id: 1, email: "admin@test.com", role: 1 }, JWT_SECRET, { expiresIn: "1h" });
+  userToken = jwt.sign({ id: 2, email: "user@test.com", role: 2 }, JWT_SECRET, { expiresIn: "1h" });
 });
 
 // ─── verifyToken ────────────────────────────────────────────────────────────
