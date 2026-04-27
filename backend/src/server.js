@@ -11,7 +11,6 @@ import multer from "multer";
 import fs from "fs";
 import rateLimit from "express-rate-limit";
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -109,11 +108,13 @@ async function hashPassword(password) {
 }
 
 const loginLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, 
-  max: 5,                   
-  message: { mesaj: "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later." }
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  message: {
+    mesaj:
+      "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later.",
+  },
 });
-
 
 app.post("/api/login", loginLimiter, async (req, res) => {
   const { email, password } = req.body;
@@ -146,19 +147,38 @@ app.post("/api/login", loginLimiter, async (req, res) => {
     };
 
     if (user.role_id === 3) {
-      const storeStaffSql = "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+      const storeStaffSql =
+        "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
       con.query(storeStaffSql, [user.id], (storeErr, storeResult) => {
         if (storeErr) {
-          console.error("Eroare la preluarea magazinului pentru staff:", storeErr);
-          return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+          console.error(
+            "Eroare la preluarea magazinului pentru staff:",
+            storeErr,
+          );
+          return res.json({
+            succes: true,
+            mesaj: "Te-ai logat!",
+            token,
+            user: userPayload,
+          });
         }
         if (storeResult.length > 0) {
           userPayload.store_id = storeResult[0].store_id;
         }
-        return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+        return res.json({
+          succes: true,
+          mesaj: "Te-ai logat!",
+          token,
+          user: userPayload,
+        });
       });
     } else {
-      return res.json({ succes: true, mesaj: "Te-ai logat!", token, user: userPayload });
+      return res.json({
+        succes: true,
+        mesaj: "Te-ai logat!",
+        token,
+        user: userPayload,
+      });
     }
   });
 });
@@ -205,7 +225,12 @@ app.get("/api/stores", verifyToken, (req, res) => {
       console.error(err);
       return res.status(500).json({ mesaj: "Eroare la server" });
     }
-    res.json(result.map((r) => ({ ...r, images: r.images ? r.images.split("|||") : [] })));
+    res.json(
+      result.map((r) => ({
+        ...r,
+        images: r.images ? r.images.split("|||") : [],
+      })),
+    );
   });
 });
 
@@ -229,7 +254,7 @@ app.get("/api/stores/:id", verifyToken, (req, res) => {
           return res.status(500).json({ mesaj: "Eroare la server" });
         }
         res.json({ ...store, images: imagesResult });
-      }
+      },
     );
   });
 });
@@ -361,29 +386,37 @@ app.delete("/api/stores/:id", verifyToken, (req, res) => {
 });
 
 // Add image(s) to a store
-app.post("/api/stores/:id/images", verifyToken, upload.array("images", 10), (req, res) => {
-  if (req.user.role !== 1)
-    return res.status(403).json({ mesaj: "Acces interzis." });
+app.post(
+  "/api/stores/:id/images",
+  verifyToken,
+  upload.array("images", 10),
+  (req, res) => {
+    if (req.user.role !== 1)
+      return res.status(403).json({ mesaj: "Acces interzis." });
 
-  const { id } = req.params;
-  if (!req.files || req.files.length === 0)
-    return res.status(400).json({ mesaj: "Niciun fișier trimis." });
+    const { id } = req.params;
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ mesaj: "Niciun fișier trimis." });
 
-  const values = req.files.map((file, i) => [
-    id,
-    `http://localhost:8000/uploads/${file.filename}`,
-    i,
-  ]);
+    const values = req.files.map((file, i) => [
+      id,
+      `http://localhost:8000/uploads/${file.filename}`,
+      i,
+    ]);
 
-  con.query(
-    "INSERT INTO store_images (store_id, url, display_order) VALUES ?",
-    [values],
-    (err) => {
-      if (err) return res.status(500).json({ mesaj: "Eroare la salvarea imaginilor." });
-      res.status(201).json({ succes: true, mesaj: "Imagini adăugate." });
-    }
-  );
-});
+    con.query(
+      "INSERT INTO store_images (store_id, url, display_order) VALUES ?",
+      [values],
+      (err) => {
+        if (err)
+          return res
+            .status(500)
+            .json({ mesaj: "Eroare la salvarea imaginilor." });
+        res.status(201).json({ succes: true, mesaj: "Imagini adăugate." });
+      },
+    );
+  },
+);
 
 // Delete a store image
 app.delete("/api/store-images/:imageId", verifyToken, (req, res) => {
@@ -402,7 +435,7 @@ app.get("/api/users", verifyToken, (req, res) => {
   if (req.user.role !== 1) {
     return res.status(403).json({ mesaj: "Acces interzis." });
   }
-  
+
   const sql = "SELECT id, firstName, lastName, email FROM users";
   con.query(sql, (err, result) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
@@ -418,7 +451,9 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
   const { user_id, store_id } = req.body;
 
   if (!user_id || !store_id) {
-    return res.status(400).json({ mesaj: "user_id și store_id sunt obligatorii." });
+    return res
+      .status(400)
+      .json({ mesaj: "user_id și store_id sunt obligatorii." });
   }
 
   const sql = "INSERT INTO store_staff (user_id, store_id) VALUES (?, ?)";
@@ -426,19 +461,31 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
     if (err) {
       console.error(err);
       if (err.code === "ER_DUP_ENTRY") {
-        return res.status(409).json({ mesaj: "Utilizatorul este deja asociat acestui magazin." });
+        return res
+          .status(409)
+          .json({ mesaj: "Utilizatorul este deja asociat acestui magazin." });
       }
-      return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
+      return res
+        .status(500)
+        .json({ mesaj: "Eroare la asignarea utilizatorului." });
     }
-    
+
     // Actualizăm rolul utilizatorului la 3 (Store Owner / Staff), dar protejăm conturile de Admin (role_id = 1)
-    const updateRoleSql = "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
+    const updateRoleSql =
+      "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
     con.query(updateRoleSql, [user_id], (updateErr) => {
       if (updateErr) {
         console.error("Eroare la actualizarea rolului:", updateErr);
-        return res.status(201).json({ succes: true, mesaj: "Utilizator asociat, dar a apărut o eroare la actualizarea rolului." });
+        return res.status(201).json({
+          succes: true,
+          mesaj:
+            "Utilizator asociat, dar a apărut o eroare la actualizarea rolului.",
+        });
       }
-      res.status(201).json({ succes: true, mesaj: "Utilizator asociat cu succes și rolul a fost actualizat." });
+      res.status(201).json({
+        succes: true,
+        mesaj: "Utilizator asociat cu succes și rolul a fost actualizat.",
+      });
     });
   });
 });
@@ -458,7 +505,12 @@ app.get("/api/cards", verifyToken, (req, res) => {
   `;
   con.query(sql, [userId], (err, result) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
-    res.json(result.map((r) => ({ ...r, images: r.images ? r.images.split("|||") : [] })));
+    res.json(
+      result.map((r) => ({
+        ...r,
+        images: r.images ? r.images.split("|||") : [],
+      })),
+    );
   });
 });
 
@@ -528,7 +580,8 @@ app.get("/api/likes", verifyToken, (req, res) => {
 app.post("/api/likes/:storeId", verifyToken, (req, res) => {
   const userId = req.user.id;
   const { storeId } = req.params;
-  const sql = "INSERT IGNORE INTO liked_stores (user_id, store_id, created_at) VALUES (?, ?, NOW())";
+  const sql =
+    "INSERT IGNORE INTO liked_stores (user_id, store_id, created_at) VALUES (?, ?, NOW())";
   con.query(sql, [userId, storeId], (err) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
     res.status(201).json({ succes: true, mesaj: "Store liked!" });
@@ -559,7 +612,7 @@ app.get("/api/qr-token", verifyToken, (req, res) => {
   const qrToken = jwt.sign(
     { userId: req.user.id, type: "qr" },
     process.env.JWT_SECRET,
-    { expiresIn: "5m" }
+    { expiresIn: "5m" },
   );
 
   res.json({ qr_token: qrToken });
@@ -589,7 +642,9 @@ app.post("/api/reviews/:storeId", verifyToken, (req, res) => {
   const { rating, comment } = req.body;
 
   if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ mesaj: "Rating trebuie să fie între 1 și 5." });
+    return res
+      .status(400)
+      .json({ mesaj: "Rating trebuie să fie între 1 și 5." });
   }
 
   const sql = `
@@ -601,6 +656,51 @@ app.post("/api/reviews/:storeId", verifyToken, (req, res) => {
     if (err) return res.status(500).json({ mesaj: "Eroare la server" });
     res.status(201).json({ succes: true });
   });
+});
+
+app.get("/api/owner/baristas", verifyToken, (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    (err, staffRows) => {
+      if (err) {
+        console.error("store_staff lookup error:", err);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      if (!staffRows.length)
+        return res
+          .status(404)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const storeId = staffRows[0].store_id;
+
+      const sql = `
+        SELECT
+          u.id,
+          u.firstName,
+          u.lastName,
+          u.email,
+          u.phone,
+          u.created_at   AS user_created_at,
+          ss.created_at  AS joined_at
+        FROM store_staff ss
+        INNER JOIN users u ON u.id = ss.user_id
+        WHERE ss.store_id = ? AND u.role_id = 4
+        ORDER BY ss.created_at DESC
+      `;
+
+      con.query(sql, [storeId], (err2, result) => {
+        if (err2) {
+          console.error("baristas query error:", err2);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+        res.json({ storeId, baristas: result });
+      });
+    },
+  );
 });
 
 app.use((req, res, next) => {
