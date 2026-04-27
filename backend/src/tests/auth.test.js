@@ -23,12 +23,45 @@ vi.mock("mysql", () => {
 });
 
 const JWT_SECRET = "test_secret";
+let adminToken;
+let userToken;
 
 beforeAll(() => {
   process.env.JWT_SECRET = JWT_SECRET;
+  adminToken = jwt.sign({ id: 1, email: "admin@test.com", role: 1 }, JWT_SECRET, { expiresIn: "1h" });
+  userToken = jwt.sign({ id: 2, email: "user@test.com", role: 2 }, JWT_SECRET, { expiresIn: "1h" });
 });
 
 // ─── verifyToken ────────────────────────────────────────────────────────────
+
+describe("Autorizare (RBAC) - Magazine", () => {
+  test("User standard (rol 2) primește 403 la adăugarea unui magazin", async () => {
+    const res = await request(app)
+      .post("/api/stores")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Test Store", address: "123 Test St" });
+    
+    expect(res.status).toBe(403);
+    expect(res.body.mesaj).toBe("Acces interzis.");
+  });
+
+  test("User standard primește 403 la ștergerea unui magazin", async () => {
+    const res = await request(app)
+      .delete("/api/stores/1")
+      .set("Authorization", `Bearer ${userToken}`);
+      
+    expect(res.status).toBe(403);
+  });
+
+  test("User standard primește 403 la asignarea personalului (store-staff)", async () => {
+    const res = await request(app)
+      .post("/api/store-staff")
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ user_id: 2, store_id: 1 });
+      
+    expect(res.status).toBe(403);
+  });
+});
 
 describe("verifyToken", () => {
   test("returneaza 403 daca lipseste token-ul", async () => {
