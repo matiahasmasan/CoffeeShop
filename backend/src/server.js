@@ -192,12 +192,19 @@ app.post("/api/register", async (req, res) => {
 
 app.get("/api/stores", verifyToken, (req, res) => {
   const sql = `
-    SELECT s.*, GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
+    SELECT
+      s.*,
+      GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
       COALESCE(AVG(r.rating), 0) as rating,
-      COUNT(r.id) as review_count
+      COUNT(DISTINCT r.id) as review_count,
+      ss.user_id as owner_id,
+      u.firstName as ownerFirstName,
+      u.lastName as ownerLastName
     FROM stores s
     LEFT JOIN store_images si ON si.store_id = s.id
     LEFT JOIN reviews r ON r.store_id = s.id
+    LEFT JOIN store_staff ss ON ss.store_id = s.id
+    LEFT JOIN users u ON u.id = ss.user_id
     GROUP BY s.id
   `;
   con.query(sql, (err, result) => {
@@ -421,24 +428,23 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
     return res.status(400).json({ mesaj: "user_id și store_id sunt obligatorii." });
   }
 
-  const sql = "INSERT INTO store_staff (user_id, store_id) VALUES (?, ?)";
-  con.query(sql, [user_id, store_id], (err, result) => {
+  const sql = `
+    INSERT INTO store_staff (store_id, user_id)
+    VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+  `;
+  con.query(sql, [store_id, user_id], (err, result) => {
     if (err) {
       console.error(err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(409).json({ mesaj: "Utilizatorul este deja asociat acestui magazin." });
-      }
       return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
     }
-    
-    // Actualizăm rolul utilizatorului la 3 (Store Owner / Staff), dar protejăm conturile de Admin (role_id = 1)
+
+    // Edit user role to staff (role_id = 3) if it's not already admin (role_id = 1)
     const updateRoleSql = "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
     con.query(updateRoleSql, [user_id], (updateErr) => {
-      if (updateErr) {
-        console.error("Eroare la actualizarea rolului:", updateErr);
-        return res.status(201).json({ succes: true, mesaj: "Utilizator asociat, dar a apărut o eroare la actualizarea rolului." });
-      }
-      res.status(201).json({ succes: true, mesaj: "Utilizator asociat cu succes și rolul a fost actualizat." });
+      if (updateErr) console.error("Eroare la actualizarea rolului:", updateErr);
+      const message = result.affectedRows > 1 ? "Proprietar actualizat cu succes." : "Proprietar asignat cu succes.";
+      res.status(201).json({ succes: true, mesaj: message });
     });
   });
 });
