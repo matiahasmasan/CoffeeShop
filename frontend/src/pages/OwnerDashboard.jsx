@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import LogoutButton from "../components/LogoutButton";
+import SearchBar from "../components/SearchBar";
 
 const API = import.meta.env.VITE_API_URL;
 const authHeader = () => ({
@@ -11,17 +14,9 @@ function initials(first, last) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
 }
 
-function formatDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("ro-RO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export default function OwnerDashboard() {
   const navigate = useNavigate();
+
   const [user] = useState(() => {
     const s = localStorage.getItem("user");
     return s ? JSON.parse(s) : null;
@@ -31,7 +26,7 @@ export default function OwnerDashboard() {
   const [baristas, setBaristas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -64,20 +59,19 @@ export default function OwnerDashboard() {
   };
 
   const filtered = baristas.filter((b) => {
-    const q = search.toLowerCase();
+    const q = searchQuery.toLowerCase();
     return (
       b.firstName?.toLowerCase().includes(q) ||
-      b.lastName?.toLowerCase().includes(q) ||
-      b.email?.toLowerCase().includes(q)
+      b.lastName?.toLowerCase().includes(q)
     );
   });
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
+      <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          {storeName ?? "..."} owner
+          {storeName ?? "..."} Dashboard
         </h2>
         <div className="flex items-center gap-4">
           <LogoutButton onClick={handleLogout} />
@@ -85,23 +79,21 @@ export default function OwnerDashboard() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 p-6 max-w-5xl w-full mx-auto">
-        {/* Title + search */}
-        <div className="flex items-center justify-between mb-4">
+      <main className="flex-1 p-6 max-w-3xl w-full mx-auto">
+        <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-800">
             Baristas{" "}
             <span className="text-sm font-normal text-gray-400">
               ({baristas.length})
             </span>
           </h3>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 w-52"
-          />
         </div>
+
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          placeholder="Search baristas..."
+        />
 
         {/* Table card */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -121,13 +113,15 @@ export default function OwnerDashboard() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex justify-center items-center py-16 text-gray-400 text-sm">
-              {search ? "No baristas match your search." : "No baristas yet."}
+              {searchQuery
+                ? "No baristas match your search."
+                : "No baristas yet."}
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["Barista", "Email", "Phone", "Member since"].map((h) => (
+                  {["Barista", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
@@ -140,10 +134,10 @@ export default function OwnerDashboard() {
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((b) => (
                   <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Name + avatar */}
+                    {/* Avatar + name */}
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
                           {initials(b.firstName, b.lastName)}
                         </div>
                         <span className="font-medium text-gray-800">
@@ -151,12 +145,38 @@ export default function OwnerDashboard() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-gray-600">{b.email}</td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {b.phone || "—"}
-                    </td>
-                    <td className="px-5 py-3 text-gray-500">
-                      {formatDate(b.joined_at)}
+
+                    {/* Actions */}
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <button
+                          title="View"
+                          className="text-blue-400 hover:text-blue-700 transition-colors"
+                          onClick={() => {
+                            /* TODO: view */
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faEye} />
+                        </button>
+                        <button
+                          title="Edit"
+                          className="text-blue-600 hover:text-blue-700 transition-colors"
+                          onClick={() => {
+                            /* TODO: edit */
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faPen} />
+                        </button>
+                        <button
+                          title="Delete"
+                          className="text-blue-800 hover:text-blue-700 transition-colors"
+                          onClick={() => {
+                            /* TODO: delete */
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
