@@ -5,4 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  test: {
+    environment: "jsdom", // Spunem Vitest să folosească un browser simulat
+    globals: true, // Ne permite să folosim describe, test, expect direct
+  },
 });
