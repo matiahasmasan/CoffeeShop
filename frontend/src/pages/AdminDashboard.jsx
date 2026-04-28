@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCards } from "../data/cards";
+import SearchBar from '../components/SearchBar';
 import LogoutButton from "../components/LogoutButton";
 
 const API = import.meta.env.VITE_API_URL;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState(null);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +132,10 @@ export default function AdminDashboard() {
 
   const PRIMARY_KEYS = ["id", "name", "address"];
 
+  const filteredStores = stores.filter((store) =>
+    (store.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
@@ -142,7 +148,10 @@ export default function AdminDashboard() {
       </header>
 
       <main className="flex-1 p-8">
-        <div className="flex items-center mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-72">
+            <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+          </div>
           <button
             onClick={() => navigate("/admin/add-store")}
             className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-sm font-medium text-white"
@@ -158,9 +167,9 @@ export default function AdminDashboard() {
 
           {loading ? (
             <div className="p-6 text-center text-gray-400">Loading...</div>
-          ) : stores.length === 0 ? (
+          ) : filteredStores.length === 0 ? (
             <div className="p-6 text-center text-gray-400">
-              No existing shops.
+              {searchQuery ? "No shops match your search." : "No existing shops."}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -191,7 +200,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {stores.slice(0, visibleCount).map((store, idx) => {
+                  {filteredStores.slice(0, visibleCount).map((store, idx) => {
                     const isExpanded = expandedRow === idx;
 
                     const extraEntries = Object.entries(store).filter(
@@ -331,13 +340,13 @@ export default function AdminDashboard() {
                   })}
                 </tbody>
               </table>
-              {visibleCount < stores.length && (
+              {visibleCount < filteredStores.length && (
                 <div className="p-4 border-t border-gray-100 text-center">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 5)}
                     className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
                   >
-                    Show more ({stores.length - visibleCount} remaining)
+                    Show more ({filteredStores.length - visibleCount} remaining)
                   </button>
                 </div>
               )}
