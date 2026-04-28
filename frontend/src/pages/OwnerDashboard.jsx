@@ -4,6 +4,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import LogoutButton from "../components/LogoutButton";
 import SearchBar from "../components/SearchBar";
+import ViewBaristaModal from "../components/ViewBaristaModal";
+import EditBaristaModal from "../components/EditBaristaModal";
+import DeleteBaristaModal from "../components/DeleteBaristaModal";
 
 const API = import.meta.env.VITE_API_URL;
 const authHeader = () => ({
@@ -27,6 +30,11 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Modal state — holds the barista object to act on, or null when closed
+  const [viewBarista, setViewBarista] = useState(null);
+  const [editBarista, setEditBarista] = useState(null);
+  const [deleteBarista, setDeleteBarista] = useState(null);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -137,9 +145,6 @@ export default function OwnerDashboard() {
                     {/* Avatar + name */}
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                          {initials(b.firstName, b.lastName)}
-                        </div>
                         <span className="font-medium text-gray-800">
                           {b.firstName} {b.lastName}
                         </span>
@@ -152,27 +157,21 @@ export default function OwnerDashboard() {
                         <button
                           title="View"
                           className="text-blue-400 hover:text-blue-700 transition-colors"
-                          onClick={() => {
-                            /* TODO: view */
-                          }}
+                          onClick={() => setViewBarista(b)}
                         >
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button
                           title="Edit"
                           className="text-blue-600 hover:text-blue-700 transition-colors"
-                          onClick={() => {
-                            /* TODO: edit */
-                          }}
+                          onClick={() => setEditBarista(b)}
                         >
                           <FontAwesomeIcon icon={faPen} />
                         </button>
                         <button
                           title="Delete"
-                          className="text-blue-800 hover:text-blue-700 transition-colors"
-                          onClick={() => {
-                            /* TODO: delete */
-                          }}
+                          className="text-blue-800 hover:text-red-600 transition-colors"
+                          onClick={() => setDeleteBarista(b)}
                         >
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
@@ -185,6 +184,22 @@ export default function OwnerDashboard() {
           )}
         </div>
       </main>
+
+      {/* Modals */}
+      <ViewBaristaModal
+        barista={viewBarista}
+        onClose={() => setViewBarista(null)}
+      />
+      <EditBaristaModal
+        barista={editBarista}
+        onClose={() => setEditBarista(null)}
+        onUpdated={fetchBaristas}
+      />
+      <DeleteBaristaModal
+        barista={deleteBarista}
+        onClose={() => setDeleteBarista(null)}
+        onDeleted={fetchBaristas}
+      />
     </div>
   );
 }
