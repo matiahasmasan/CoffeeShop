@@ -714,6 +714,108 @@ app.get("/api/owner/baristas", verifyToken, (req, res) => {
   );
 });
 
+// POST /api/owner/baristas — create a new barista account and assign to the owner's store
+app.post("/api/owner/baristas", verifyToken, async (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { firstName, lastName, email, password, phone } = req.body;
+
+  if (!firstName?.trim() || !lastName?.trim()) {
+    return res
+      .status(400)
+      .json({ mesaj: "Prenumele și numele sunt obligatorii." });
+  }
+  if (!email?.trim()) {
+    return res.status(400).json({ mesaj: "Email-ul este obligatoriu." });
+  }
+  if (!password || password.length < 6) {
+    return res
+      .status(400)
+      .json({ mesaj: "Parola trebuie să aibă cel puțin 6 caractere." });
+  }
+  if (!phone?.trim()) {
+    return res
+      .status(400)
+      .json({ mesaj: "Numărul de telefon este obligatoriu." });
+  }
+
+  // Resolve the owner's store
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    async (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server." });
+      if (!staffRows.length)
+        return res
+          .status(404)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const storeId = staffRows[0].store_id;
+
+      // Hash the password
+      let hashedPassword;
+      try {
+        hashedPassword = await bcrypt.hash(password, 10);
+      } catch {
+        return res.status(500).json({ mesaj: "Eroare la procesarea parolei." });
+      }
+
+      // Insert the new user with role_id = 4 (barista)
+      const insertUserSql = `
+        INSERT INTO users (role_id, firstName, lastName, email, password, phone)
+        VALUES (4, ?, ?, ?, ?, ?)
+      `;
+      con.query(
+        insertUserSql,
+        [
+          firstName.trim(),
+          lastName.trim(),
+          email.trim(),
+          hashedPassword,
+          phone.trim(),
+        ],
+        (insertErr, insertResult) => {
+          if (insertErr) {
+            if (insertErr.code === "ER_DUP_ENTRY") {
+              return res
+                .status(409)
+                .json({ mesaj: "Email-ul sau telefonul este deja folosit." });
+            }
+            return res
+              .status(500)
+              .json({ mesaj: "Eroare la crearea contului." });
+          }
+
+          const newUserId = insertResult.insertId;
+
+          // Link the new barista to the owner's store
+          const insertStaffSql = `
+            INSERT INTO store_staff (store_id, user_id) VALUES (?, ?)
+          `;
+          con.query(insertStaffSql, [storeId, newUserId], (staffErr) => {
+            if (staffErr) {
+              // Roll back: delete the user we just created
+              con.query(
+                "DELETE FROM users WHERE id = ?",
+                [newUserId],
+                () => {},
+              );
+              return res
+                .status(500)
+                .json({ mesaj: "Eroare la asignarea baristului la magazin." });
+            }
+
+            res
+              .status(201)
+              .json({ succes: true, mesaj: "Barist adăugat cu succes!" });
+          });
+        },
+      );
+    },
+  );
+});
+
 app.put("/api/owner/baristas/:id", verifyToken, (req, res) => {
   if (req.user.role !== 3)
     return res.status(403).json({ mesaj: "Acces interzis." });
@@ -774,7 +876,7 @@ app.put("/api/owner/baristas/:id", verifyToken, (req, res) => {
   );
 });
 
-// DELETE /api/owner/baristas/:id — remove a barista from the store
+// DELETE — remove a barista from the store
 app.delete("/api/owner/baristas/:id", verifyToken, (req, res) => {
   if (req.user.role !== 3)
     return res.status(403).json({ mesaj: "Acces interzis." });

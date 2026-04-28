@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEye,
+  faPen,
+  faTrash,
+  faPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import LogoutButton from "../components/LogoutButton";
 import SearchBar from "../components/SearchBar";
 import ViewBaristaModal from "../components/ViewBaristaModal";
 import EditBaristaModal from "../components/EditBaristaModal";
 import DeleteBaristaModal from "../components/DeleteBaristaModal";
+import AddBaristaModal from "../components/AddBaristaModal";
 
 const API = import.meta.env.VITE_API_URL;
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
-
-function initials(first, last) {
-  return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
-}
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
@@ -31,10 +33,11 @@ export default function OwnerDashboard() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Modal state — holds the barista object to act on, or null when closed
+  // Modal state
   const [viewBarista, setViewBarista] = useState(null);
   const [editBarista, setEditBarista] = useState(null);
   const [deleteBarista, setDeleteBarista] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -95,6 +98,13 @@ export default function OwnerDashboard() {
               ({baristas.length})
             </span>
           </h3>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          >
+            <FontAwesomeIcon icon={faPlus} className="text-xs" />
+            Add Barista
+          </button>
         </div>
 
         <SearchBar
@@ -142,16 +152,11 @@ export default function OwnerDashboard() {
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((b) => (
                   <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Avatar + name */}
                     <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-gray-800">
-                          {b.firstName} {b.lastName}
-                        </span>
-                      </div>
+                      <span className="font-medium text-gray-800">
+                        {b.firstName} {b.lastName}
+                      </span>
                     </td>
-
-                    {/* Actions */}
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <button
@@ -199,6 +204,11 @@ export default function OwnerDashboard() {
         barista={deleteBarista}
         onClose={() => setDeleteBarista(null)}
         onDeleted={fetchBaristas}
+      />
+      <AddBaristaModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={fetchBaristas}
       />
     </div>
   );
