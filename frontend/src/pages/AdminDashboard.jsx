@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       setUser(storedUser);
     }
   }, [navigate]);
-
+// test
   useEffect(() => {
     const fetchStores = async () => {
       setLoading(true);
