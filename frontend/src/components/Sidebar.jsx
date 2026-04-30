@@ -1,31 +1,19 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faHouse,
-  faArrowRightArrowLeft,
-  faX,
-} from "@fortawesome/free-solid-svg-icons";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 import LogoutButton from "./LogoutButton";
 
-const NAV_LINKS = [
-  { label: "Home", icon: faHouse, path: "/owner" },
-  {
-    label: "Transactions",
-    icon: faArrowRightArrowLeft,
-    path: "/owner/transactions",
-  },
-];
-
 /**
- * Sidebar
+ * Sidebar — reusable across all roles
  *
  * Props:
  *   isOpen    {boolean}
  *   onClose   {() => void}
  *   storeName {string | null}
+ *   links     {{ label: string, icon: IconDefinition, path: string }[]}
  */
-export default function Sidebar({ isOpen, onClose, storeName }) {
+export default function Sidebar({ isOpen, onClose, storeName, links = [] }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -90,7 +78,7 @@ export default function Sidebar({ isOpen, onClose, storeName }) {
 
         {/* Nav links */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-          {NAV_LINKS.map(({ label, icon, path }) => {
+          {links.map(({ label, icon, path }) => {
             const active = location.pathname === path;
             return (
               <button
