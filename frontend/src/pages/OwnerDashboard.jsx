@@ -6,9 +6,11 @@ import {
   faPen,
   faTrash,
   faPlus,
+  faBars,
 } from "@fortawesome/free-solid-svg-icons";
 import LogoutButton from "../components/LogoutButton";
 import SearchBar from "../components/SearchBar";
+import Sidebar from "../components/Sidebar";
 import ViewBaristaModal from "../components/ViewBaristaModal";
 import EditBaristaModal from "../components/EditBaristaModal";
 import DeleteBaristaModal from "../components/DeleteBaristaModal";
@@ -32,6 +34,9 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // UI state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Modal state
   const [viewBarista, setViewBarista] = useState(null);
@@ -64,11 +69,6 @@ export default function OwnerDashboard() {
     fetchBaristas();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
   const filtered = baristas.filter((b) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -79,14 +79,26 @@ export default function OwnerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        storeName={storeName}
+      />
+
       {/* Header */}
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
         <h2 className="text-xl font-semibold text-gray-800">
           {storeName ?? "..."} Dashboard
         </h2>
-        <div className="flex items-center gap-4">
-          <LogoutButton onClick={handleLogout} />
-        </div>
+        {/* Burger */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="text-gray-500 hover:text-gray-800 transition-colors"
+          aria-label="Open menu"
+        >
+          <FontAwesomeIcon icon={faBars} className="text-lg" />
+        </button>
       </header>
 
       {/* Main */}
@@ -162,7 +174,6 @@ export default function OwnerDashboard() {
                       key={b.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      {/* Barista — avatar + name, always visible */}
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
@@ -173,18 +184,12 @@ export default function OwnerDashboard() {
                           </span>
                         </div>
                       </td>
-
-                      {/* Email — desktop only */}
                       <td className="hidden md:table-cell px-5 py-3 text-gray-500">
                         {b.email || "—"}
                       </td>
-
-                      {/* Phone — desktop only */}
                       <td className="hidden md:table-cell px-5 py-3 text-gray-500">
                         {b.phone || "—"}
                       </td>
-
-                      {/* Actions — always visible */}
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           <button
