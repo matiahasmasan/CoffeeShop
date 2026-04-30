@@ -139,51 +139,80 @@ export default function OwnerDashboard() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["Barista", "Actions"].map((h) => (
-                    <th
-                      key={h}
-                      className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Barista
+                  </th>
+                  <th className="hidden md:table-cell text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Email
+                  </th>
+                  <th className="hidden md:table-cell text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Phone
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <span className="font-medium text-gray-800">
-                        {b.firstName} {b.lastName}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          title="View"
-                          className="text-blue-400 hover:text-blue-700 transition-colors"
-                          onClick={() => setViewBarista(b)}
-                        >
-                          <FontAwesomeIcon icon={faEye} />
-                        </button>
-                        <button
-                          title="Edit"
-                          className="text-blue-600 hover:text-blue-700 transition-colors"
-                          onClick={() => setEditBarista(b)}
-                        >
-                          <FontAwesomeIcon icon={faPen} />
-                        </button>
-                        <button
-                          title="Delete"
-                          className="text-blue-800 hover:text-red-600 transition-colors"
-                          onClick={() => setDeleteBarista(b)}
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((b) => {
+                  const initials =
+                    `${b.firstName?.[0] ?? ""}${b.lastName?.[0] ?? ""}`.toUpperCase();
+                  return (
+                    <tr
+                      key={b.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      {/* Barista — avatar + name, always visible */}
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                            {initials}
+                          </div>
+                          <span className="font-medium text-gray-800">
+                            {b.firstName} {b.lastName}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Email — desktop only */}
+                      <td className="hidden md:table-cell px-5 py-3 text-gray-500">
+                        {b.email || "—"}
+                      </td>
+
+                      {/* Phone — desktop only */}
+                      <td className="hidden md:table-cell px-5 py-3 text-gray-500">
+                        {b.phone || "—"}
+                      </td>
+
+                      {/* Actions — always visible */}
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            title="View"
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            onClick={() => setViewBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                          <button
+                            title="Edit"
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            onClick={() => setEditBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faPen} />
+                          </button>
+                          <button
+                            title="Delete"
+                            className="text-gray-400 hover:text-red-600 transition-colors"
+                            onClick={() => setDeleteBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
