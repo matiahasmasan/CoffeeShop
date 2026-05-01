@@ -1,27 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import LogoutButton from "../components/LogoutButton";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faEye,
+  faPen,
+  faTrash,
+  faPlus,
+  faBars,
+  faHouse,
+  faArrowRightArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import SearchBar from "../components/SearchBar";
+import Sidebar from "../components/Sidebar";
+import ViewBaristaModal from "../components/ViewBaristaModal";
+import EditBaristaModal from "../components/EditBaristaModal";
+import DeleteBaristaModal from "../components/DeleteBaristaModal";
+import AddBaristaModal from "../components/AddBaristaModal";
 
 const API = import.meta.env.VITE_API_URL;
+
+// OwnerDashboard — sidebar links
+const OWNER_LINKS = [
+  { label: "Home", icon: faHouse, path: "/owner" },
+  {
+    label: "Transactions",
+    icon: faArrowRightArrowLeft,
+    path: "/owner/transactions",
+  },
+];
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-function initials(first, last) {
-  return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
-}
-
-function formatDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("ro-RO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export default function OwnerDashboard() {
   const navigate = useNavigate();
+
   const [user] = useState(() => {
     const s = localStorage.getItem("user");
     return s ? JSON.parse(s) : null;
@@ -31,7 +44,16 @@ export default function OwnerDashboard() {
   const [baristas, setBaristas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // UI state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Modal state
+  const [viewBarista, setViewBarista] = useState(null);
+  const [editBarista, setEditBarista] = useState(null);
+  const [deleteBarista, setDeleteBarista] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -58,50 +80,62 @@ export default function OwnerDashboard() {
     fetchBaristas();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
-
   const filtered = baristas.filter((b) => {
-    const q = search.toLowerCase();
+    const q = searchQuery.toLowerCase();
     return (
       b.firstName?.toLowerCase().includes(q) ||
-      b.lastName?.toLowerCase().includes(q) ||
-      b.email?.toLowerCase().includes(q)
+      b.lastName?.toLowerCase().includes(q)
     );
   });
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        storeName={storeName}
+        links={OWNER_LINKS}
+      />
+
       {/* Header */}
-      <header className="bg-white shadow-sm h-16 flex items-center justify-between px-8">
+      <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          {storeName ?? "..."} owner
+          {storeName ?? "..."} Dashboard
         </h2>
-        <div className="flex items-center gap-4">
-          <LogoutButton onClick={handleLogout} />
-        </div>
+        {/* Burger */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="text-gray-500 hover:text-gray-800 transition-colors"
+          aria-label="Open menu"
+        >
+          <FontAwesomeIcon icon={faBars} className="text-lg" />
+        </button>
       </header>
 
       {/* Main */}
-      <main className="flex-1 p-6 max-w-5xl w-full mx-auto">
-        {/* Title + search */}
-        <div className="flex items-center justify-between mb-4">
+      <main className="flex-1 p-6 max-w-3xl w-full mx-auto">
+        <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-800">
             Baristas{" "}
             <span className="text-sm font-normal text-gray-400">
               ({baristas.length})
             </span>
           </h3>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 w-52"
-          />
+          <button
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+          >
+            <FontAwesomeIcon icon={faPlus} className="text-xs" />
+            Add Barista
+          </button>
         </div>
+
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          placeholder="Search baristas..."
+        />
 
         {/* Table card */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -121,50 +155,107 @@ export default function OwnerDashboard() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex justify-center items-center py-16 text-gray-400 text-sm">
-              {search ? "No baristas match your search." : "No baristas yet."}
+              {searchQuery
+                ? "No baristas match your search."
+                : "No baristas yet."}
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["Barista", "Email", "Phone", "Member since"].map((h) => (
-                    <th
-                      key={h}
-                      className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Barista
+                  </th>
+                  <th className="hidden md:table-cell text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Email
+                  </th>
+                  <th className="hidden md:table-cell text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Phone
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Name + avatar */}
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                          {initials(b.firstName, b.lastName)}
+                {filtered.map((b) => {
+                  const initials =
+                    `${b.firstName?.[0] ?? ""}${b.lastName?.[0] ?? ""}`.toUpperCase();
+                  return (
+                    <tr
+                      key={b.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                            {initials}
+                          </div>
+                          <span className="font-medium text-gray-800">
+                            {b.firstName} {b.lastName}
+                          </span>
                         </div>
-                        <span className="font-medium text-gray-800">
-                          {b.firstName} {b.lastName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">{b.email}</td>
-                    <td className="px-5 py-3 text-gray-600">
-                      {b.phone || "—"}
-                    </td>
-                    <td className="px-5 py-3 text-gray-500">
-                      {formatDate(b.joined_at)}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="hidden md:table-cell px-5 py-3 text-gray-500">
+                        {b.email || "—"}
+                      </td>
+                      <td className="hidden md:table-cell px-5 py-3 text-gray-500">
+                        {b.phone || "—"}
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            title="View"
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            onClick={() => setViewBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                          <button
+                            title="Edit"
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            onClick={() => setEditBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faPen} />
+                          </button>
+                          <button
+                            title="Delete"
+                            className="text-gray-400 hover:text-red-600 transition-colors"
+                            onClick={() => setDeleteBarista(b)}
+                          >
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
         </div>
       </main>
+
+      {/* Modals */}
+      <ViewBaristaModal
+        barista={viewBarista}
+        onClose={() => setViewBarista(null)}
+      />
+      <EditBaristaModal
+        barista={editBarista}
+        onClose={() => setEditBarista(null)}
+        onUpdated={fetchBaristas}
+      />
+      <DeleteBaristaModal
+        barista={deleteBarista}
+        onClose={() => setDeleteBarista(null)}
+        onDeleted={fetchBaristas}
+      />
+      <AddBaristaModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={fetchBaristas}
+      />
     </div>
   );
 }

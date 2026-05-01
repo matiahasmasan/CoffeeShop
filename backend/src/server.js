@@ -721,6 +721,213 @@ app.get("/api/owner/baristas", verifyToken, (req, res) => {
   );
 });
 
+// POST /api/owner/baristas — create a new barista account and assign to the owner's store
+app.post("/api/owner/baristas", verifyToken, async (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { firstName, lastName, email, password, phone } = req.body;
+
+  if (!firstName?.trim() || !lastName?.trim()) {
+    return res
+      .status(400)
+      .json({ mesaj: "Prenumele și numele sunt obligatorii." });
+  }
+  if (!email?.trim()) {
+    return res.status(400).json({ mesaj: "Email-ul este obligatoriu." });
+  }
+  if (!password || password.length < 6) {
+    return res
+      .status(400)
+      .json({ mesaj: "Parola trebuie să aibă cel puțin 6 caractere." });
+  }
+  if (!phone?.trim()) {
+    return res
+      .status(400)
+      .json({ mesaj: "Numărul de telefon este obligatoriu." });
+  }
+
+  // Resolve the owner's store
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    async (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server." });
+      if (!staffRows.length)
+        return res
+          .status(404)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const storeId = staffRows[0].store_id;
+
+      // Hash the password
+      let hashedPassword;
+      try {
+        hashedPassword = await bcrypt.hash(password, 10);
+      } catch {
+        return res.status(500).json({ mesaj: "Eroare la procesarea parolei." });
+      }
+
+      // Insert the new user with role_id = 4 (barista)
+      const insertUserSql = `
+        INSERT INTO users (role_id, firstName, lastName, email, password, phone)
+        VALUES (4, ?, ?, ?, ?, ?)
+      `;
+      con.query(
+        insertUserSql,
+        [
+          firstName.trim(),
+          lastName.trim(),
+          email.trim(),
+          hashedPassword,
+          phone.trim(),
+        ],
+        (insertErr, insertResult) => {
+          if (insertErr) {
+            if (insertErr.code === "ER_DUP_ENTRY") {
+              return res
+                .status(409)
+                .json({ mesaj: "Email-ul sau telefonul este deja folosit." });
+            }
+            return res
+              .status(500)
+              .json({ mesaj: "Eroare la crearea contului." });
+          }
+
+          const newUserId = insertResult.insertId;
+
+          // Link the new barista to the owner's store
+          const insertStaffSql = `
+            INSERT INTO store_staff (store_id, user_id) VALUES (?, ?)
+          `;
+          con.query(insertStaffSql, [storeId, newUserId], (staffErr) => {
+            if (staffErr) {
+              // Roll back: delete the user we just created
+              con.query(
+                "DELETE FROM users WHERE id = ?",
+                [newUserId],
+                () => {},
+              );
+              return res
+                .status(500)
+                .json({ mesaj: "Eroare la asignarea baristului la magazin." });
+            }
+
+            res
+              .status(201)
+              .json({ succes: true, mesaj: "Barist adăugat cu succes!" });
+          });
+        },
+      );
+    },
+  );
+});
+
+app.put("/api/owner/baristas/:id", verifyToken, (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { id } = req.params;
+  const { firstName, lastName, email, phone } = req.body;
+
+  if (!firstName?.trim() || !lastName?.trim()) {
+    return res
+      .status(400)
+      .json({ mesaj: "Prenumele și numele sunt obligatorii." });
+  }
+
+  // Verify the barista belongs to the owner's store
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!staffRows.length)
+        return res
+          .status(404)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const storeId = staffRows[0].store_id;
+
+      // Confirm the target user is a barista (role 4) in this store
+      const checkSql = `
+        SELECT ss.user_id FROM store_staff ss
+        INNER JOIN users u ON u.id = ss.user_id
+        WHERE ss.store_id = ? AND ss.user_id = ? AND u.role_id = 4
+      `;
+      con.query(checkSql, [storeId, id], (checkErr, checkRows) => {
+        if (checkErr)
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        if (!checkRows.length)
+          return res
+            .status(404)
+            .json({ mesaj: "Baristul nu a fost găsit în magazinul tău." });
+
+        const updateSql = `
+          UPDATE users SET firstName = ?, lastName = ?, email = ?, phone = ?
+          WHERE id = ?
+        `;
+        con.query(
+          updateSql,
+          [firstName.trim(), lastName.trim(), email || null, phone || null, id],
+          (updateErr) => {
+            if (updateErr)
+              return res
+                .status(500)
+                .json({ mesaj: "Eroare la actualizarea baristului." });
+            res.json({ succes: true, mesaj: "Barist actualizat cu succes!" });
+          },
+        );
+      });
+    },
+  );
+});
+
+// DELETE — remove a barista from the store
+app.delete("/api/owner/baristas/:id", verifyToken, (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { id } = req.params;
+
+  // Verify the barista belongs to the owner's store
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!staffRows.length)
+        return res
+          .status(404)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const storeId = staffRows[0].store_id;
+
+      // Remove from store_staff and revert role to regular user (role 2)
+      const deleteSql =
+        "DELETE FROM store_staff WHERE store_id = ? AND user_id = ?";
+      con.query(deleteSql, [storeId, id], (deleteErr, deleteResult) => {
+        if (deleteErr)
+          return res.status(500).json({ mesaj: "Eroare la ștergere." });
+        if (deleteResult.affectedRows === 0)
+          return res
+            .status(404)
+            .json({ mesaj: "Baristul nu a fost găsit în magazinul tău." });
+
+        // Revert role to regular user
+        con.query(
+          "UPDATE users SET role_id = 2 WHERE id = ? AND role_id = 4",
+          [id],
+          () => {
+            // Role revert is best-effort; respond success regardless
+            res.json({ succes: true, mesaj: "Barist eliminat cu succes!" });
+          },
+        );
+      });
+    },
+  );
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",
