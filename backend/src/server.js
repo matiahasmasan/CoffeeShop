@@ -463,39 +463,46 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
       .json({ mesaj: "user_id și store_id sunt obligatorii." });
   }
 
-  const sql = `
-    INSERT INTO store_staff (store_id, user_id)
-    VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
-  `;
-  con.query(sql, [store_id, user_id], (err, result) => {
-    if (err) {
-      console.error(err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res
-          .status(409)
-          .json({ mesaj: "Utilizatorul este deja asociat acestui magazin." });
-      }
-      return res
-        .status(500)
-        .json({ mesaj: "Eroare la asignarea utilizatorului." });
-    }
+  // 1. old owner (if exists)
+  const checkSql = "SELECT user_id FROM store_staff WHERE store_id = ?";
+  con.query(checkSql, [store_id], (checkErr, checkResult) => {
+    if (checkErr) return res.status(500).json({ mesaj: "Eroare la verificarea magazinului." });
 
-    // Actualizăm rolul utilizatorului la 3 (Store Owner / Staff), dar protejăm conturile de Admin (role_id = 1)
-    const updateRoleSql =
-      "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
-    con.query(updateRoleSql, [user_id], (updateErr) => {
-      if (updateErr) {
-        console.error("Eroare la actualizarea rolului:", updateErr);
-        return res.status(201).json({
-          succes: true,
-          mesaj:
-            "Utilizator asociat, dar a apărut o eroare la actualizarea rolului.",
-        });
+    const old_user_id = checkResult.length > 0 ? checkResult[0].user_id : null;
+
+    // 2. set the new owner
+    const sql = `
+      INSERT INTO store_staff (store_id, user_id)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
+    `;
+    con.query(sql, [store_id, user_id], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
       }
-      res.status(201).json({
-        succes: true,
-        mesaj: "Utilizator asociat cu succes și rolul a fost actualizat.",
+
+      // 3. upgrade new owner to role_id 3
+      const updateRoleSql = "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
+      con.query(updateRoleSql, [user_id], (updateErr) => {
+        if (updateErr) console.error("Eroare la actualizarea rolului:", updateErr);
+
+        // 4. take the old owner back to role_id 2 if they have no other stores
+        if (old_user_id && old_user_id != user_id) {
+          const countStoresSql = "SELECT COUNT(*) as cnt FROM store_staff WHERE user_id = ?";
+          con.query(countStoresSql, [old_user_id], (countErr, countResult) => {
+            // make sure to log any error but not fail the main request
+            if (!countErr && countResult[0].cnt === 0) {
+              const downgradeSql = "UPDATE users SET role_id = 2 WHERE id = ? AND role_id != 1";
+              con.query(downgradeSql, [old_user_id], (downErr) => {
+                if (downErr) console.error("Eroare la retrogradarea vechiului proprietar:", downErr);
+              });
+            }
+          });
+        }
+
+        const message = result.affectedRows > 1 ? "Proprietar actualizat cu succes." : "Proprietar asignat cu succes.";
+        res.status(201).json({ succes: true, mesaj: message });
       });
     });
   });
