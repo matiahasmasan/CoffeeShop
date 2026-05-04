@@ -703,11 +703,11 @@ app.get("/api/owner/baristas", verifyToken, (req, res) => {
           u.email,
           u.phone,
           u.created_at   AS user_created_at,
-          ss.created_at  AS joined_at
+          u.created_at   AS joined_at
         FROM store_staff ss
         INNER JOIN users u ON u.id = ss.user_id
         WHERE ss.store_id = ? AND u.role_id = 4
-        ORDER BY ss.created_at DESC
+        ORDER BY u.created_at DESC
       `;
 
       con.query(sql, [storeId], (err2, result) => {
@@ -789,6 +789,7 @@ app.post("/api/owner/baristas", verifyToken, async (req, res) => {
                 .status(409)
                 .json({ mesaj: "Email-ul sau telefonul este deja folosit." });
             }
+            console.error("Eroare MySQL la crearea contului (tabela users):", insertErr);
             return res
               .status(500)
               .json({ mesaj: "Eroare la crearea contului." });
@@ -802,6 +803,7 @@ app.post("/api/owner/baristas", verifyToken, async (req, res) => {
           `;
           con.query(insertStaffSql, [storeId, newUserId], (staffErr) => {
             if (staffErr) {
+              console.error("Eroare MySQL la asignare (tabela store_staff):", staffErr);
               // Roll back: delete the user we just created
               con.query(
                 "DELETE FROM users WHERE id = ?",
