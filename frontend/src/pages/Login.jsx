@@ -15,7 +15,10 @@ export default function Login() {
     const userString = localStorage.getItem("user");
     const user = userString ? JSON.parse(userString) : null;
     if (token && user) {
-      if (user.role_id === 3 ) {
+      if(user.role_id === 4){
+        navigate("barista-dashboard");
+      }
+        else if (user.role_id === 3 ) {
         navigate("/owner-dashboard");
       } else if (user.role_id === 1) {
         navigate("/adminDashboard");

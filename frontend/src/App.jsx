@@ -10,6 +10,8 @@ import "./App.css";
 
 const API = import.meta.env.VITE_API_URL;
 
+// Function for deleting expired or invalid token from localStorage
+// and redirection to /login
 function useSessionGuard() {
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -37,6 +39,7 @@ import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
+import BaristaDashboard from "./pages/BaristaDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
 import Cards from "./pages/Cards.jsx";
@@ -58,9 +61,17 @@ function App() {
         } />
 
         <Route
+          path="/barista-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[4]}>
+              <BaristaDashboard />
+            </ProtectedRoute>
+        }/>
+
+        <Route
           path="/home"
           element={
-            <ProtectedRoute allowedRoles={[2,4]}>
+            <ProtectedRoute allowedRoles={[2]}>
               <Wallet />
             </ProtectedRoute>
           }

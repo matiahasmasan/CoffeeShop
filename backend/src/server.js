@@ -146,7 +146,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       role_id: user.role_id,
     };
 
-    if (user.role_id === 3) {
+    if (user.role_id === 3 || user.role_id === 4) {
       const storeStaffSql =
         "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
       con.query(storeStaffSql, [user.id], (storeErr, storeResult) => {
