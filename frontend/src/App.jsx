@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +7,28 @@ import {
 } from "react-router-dom";
 import { ProtectedRoute } from "./middleware/auth.jsx";
 import "./App.css";
+
+const API = import.meta.env.VITE_API_URL;
+
+function useSessionGuard() {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch(`${API}/api/likes`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          if (window.location.pathname !== "/login") {
+            window.location.replace("/login");
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+}
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Wallet from "./pages/Wallet";
@@ -19,6 +42,8 @@ import QRPage from "./pages/QRPage.jsx";
 import Cards from "./pages/Cards.jsx";
 
 function App() {
+  useSessionGuard();
+
   return (
     <Router>
       <Routes>
