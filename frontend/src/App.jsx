@@ -35,7 +35,7 @@ function App() {
         <Route
           path="/home"
           element={
-            <ProtectedRoute allowedRoles={[2]}>
+            <ProtectedRoute allowedRoles={[2,4]}>
               <Wallet />
             </ProtectedRoute>
           }
