@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -6,8 +6,11 @@ import {
   faQrcode,
   faArrowRightArrowLeft,
   faMugHot,
+  faClipboard,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../components/Sidebar";
+import QrScannerModal from "../components/QrScannerModal";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -34,6 +37,12 @@ export default function BaristaDashboard() {
   const [storeName, setStoreName] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // ── QR scanner state ──────────────────────────────────────────────────────
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanResult, setScanResult] = useState("");
+  const [copied, setCopied] = useState(false);
+  const resultRef = useRef(null);
+
   useEffect(() => {
     if (!user?.store_id) return;
     fetch(`${API}/api/stores/${user.store_id}`, { headers: authHeader() })
@@ -42,6 +51,30 @@ export default function BaristaDashboard() {
       .catch(() => {});
   }, [user?.store_id]);
 
+  // Called by QrScannerModal on successful scan
+  const handleScan = (value) => {
+    setScanResult(value);
+    setCopied(false);
+    // Briefly highlight the textbox so the barista sees the result
+    setTimeout(() => resultRef.current?.select(), 50);
+  };
+
+  // Copy-to-clipboard helper
+  const handleCopy = async () => {
+    if (!scanResult) return;
+    try {
+      await navigator.clipboard.writeText(scanResult);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers / HTTP
+      resultRef.current?.select();
+      document.execCommand("copy");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Sidebar
@@ -49,6 +82,13 @@ export default function BaristaDashboard() {
         onClose={() => setSidebarOpen(false)}
         storeName={storeName}
         links={BARISTA_LINKS}
+      />
+
+      {/* QR Scanner Modal */}
+      <QrScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
       />
 
       {/* Header */}
@@ -81,7 +121,7 @@ export default function BaristaDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <button
             className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
-            onClick={() => {}}
+            onClick={() => setScannerOpen(true)}
           >
             <div className="w-12 h-12 rounded-lg bg-gray-900 text-white flex items-center justify-center">
               <FontAwesomeIcon icon={faQrcode} className="text-lg" />
@@ -105,6 +145,41 @@ export default function BaristaDashboard() {
             </div>
           </button>
         </div>
+
+        {/* Scan result — only shown after a scan */}
+        {scanResult && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6 animate-fade-in">
+            <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
+              Last scan result
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                ref={resultRef}
+                type="text"
+                readOnly
+                value={scanResult}
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-gray-300 truncate"
+                onClick={(e) => e.target.select()}
+              />
+              <button
+                onClick={handleCopy}
+                className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-colors
+                  ${
+                    copied
+                      ? "bg-green-50 border-green-200 text-green-600"
+                      : "bg-white border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300"
+                  }`}
+                aria-label="Copy to clipboard"
+                title="Copy"
+              >
+                <FontAwesomeIcon
+                  icon={copied ? faCheck : faClipboard}
+                  className="text-sm"
+                />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Stats placeholder */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">

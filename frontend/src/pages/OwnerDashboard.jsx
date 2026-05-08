@@ -188,7 +188,7 @@ export default function OwnerDashboard() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                             {initials}
                           </div>
                           <span className="font-medium text-gray-800">
