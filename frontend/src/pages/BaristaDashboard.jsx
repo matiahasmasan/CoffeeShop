@@ -42,6 +42,9 @@ export default function BaristaDashboard() {
   const [scanResult, setScanResult] = useState("");
   const [copied, setCopied] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
+  const [scannedClient, setScannedClient] = useState(null);
+  const [pointsToAdd, setPointsToAdd] = useState(1);
+  const [addingPoints, setAddingPoints] = useState(false);
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function BaristaDashboard() {
   const handleScan = async (value) => {
     setScanLoading(true);
     setCopied(false);
+    setScannedClient(null);
     try {
       const res = await fetch(`${API}/api/qr/resolve`, {
         method: "POST",
@@ -70,12 +74,44 @@ export default function BaristaDashboard() {
       if (!res.ok) throw new Error(data?.mesaj || "Invalid QR token.");
 
       setScanResult(`${data.clientName}`);
+      setScannedClient({ userId: data.userId, name: data.clientName });
     } catch (err) {
       setScanResult(err.message || "Could not read this QR code.");
     } finally {
       setScanLoading(false);
       // Briefly highlight the textbox so the barista sees the result
       setTimeout(() => resultRef.current?.select(), 50);
+    }
+  };
+
+  const handleAddPoints = async () => {
+    if (!scannedClient?.userId || !pointsToAdd) return;
+
+    setAddingPoints(true);
+    try {
+      const res = await fetch(`${API}/api/barista/points/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+        body: JSON.stringify({
+          customerUserId: scannedClient.userId,
+          points: Number(pointsToAdd),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.mesaj || "Could not add points.");
+
+      setScanResult(
+        `${data.clientName} now has ${data.pointsNow} points at ${data.storeName}.`,
+      );
+      setCopied(false);
+    } catch (err) {
+      setScanResult(err.message || "Could not add points.");
+    } finally {
+      setAddingPoints(false);
     }
   };
 
@@ -183,6 +219,7 @@ export default function BaristaDashboard() {
               />
               <button
                 onClick={handleCopy}
+                disabled={scanLoading}
                 className={`shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-colors
                   ${
                     copied
@@ -198,6 +235,25 @@ export default function BaristaDashboard() {
                 />
               </button>
             </div>
+            {scannedClient && (
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={pointsToAdd}
+                  onChange={(e) => setPointsToAdd(e.target.value)}
+                  className="w-full sm:w-28 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                />
+                <button
+                  onClick={handleAddPoints}
+                  disabled={addingPoints}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {addingPoints ? "Adding..." : "Add points"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -671,6 +671,86 @@ app.post("/api/qr/resolve", verifyToken, (req, res) => {
   });
 });
 
+app.post("/api/barista/points/add", verifyToken, (req, res) => {
+  if (req.user.role !== 4 && req.user.role !== 3) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const { customerUserId, points } = req.body;
+  const parsedCustomerUserId = Number(customerUserId);
+  const parsedPoints = Number(points);
+
+  if (!Number.isInteger(parsedCustomerUserId) || parsedCustomerUserId <= 0) {
+    return res.status(400).json({ mesaj: "Client invalid." });
+  }
+
+  if (!Number.isInteger(parsedPoints) || parsedPoints <= 0 || parsedPoints > 20) {
+    return res
+      .status(400)
+      .json({ mesaj: "Numarul de puncte trebuie sa fie intre 1 si 20." });
+  }
+
+  const staffStoreSql = "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+
+    const storeId = staffRows[0].store_id;
+    const storeSql = "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
+    con.query(storeSql, [storeId], (storeErr, storeRows) => {
+      if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!storeRows.length) {
+        return res.status(404).json({ mesaj: "Magazinul nu a fost gasit." });
+      }
+
+      const store = storeRows[0];
+      const maxPoints = Number(store.max_points) || 6;
+      const upsertSql = `
+        INSERT INTO loyalty_cards (user_id, store_id, points, total_points_earned, created_at)
+        VALUES (?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+          points = LEAST(points + VALUES(points), ?),
+          total_points_earned = total_points_earned + VALUES(total_points_earned)
+      `;
+
+      con.query(
+        upsertSql,
+        [parsedCustomerUserId, storeId, parsedPoints, parsedPoints, maxPoints],
+        (upsertErr) => {
+          if (upsertErr) return res.status(500).json({ mesaj: "Eroare la server" });
+
+          const resultSql = `
+            SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
+            FROM loyalty_cards lc
+            INNER JOIN users u ON u.id = lc.user_id
+            WHERE lc.user_id = ? AND lc.store_id = ?
+            LIMIT 1
+          `;
+          con.query(resultSql, [parsedCustomerUserId, storeId], (resultErr, rows) => {
+            if (resultErr) return res.status(500).json({ mesaj: "Eroare la server" });
+            if (!rows.length) {
+              return res.status(404).json({ mesaj: "Clientul nu a fost gasit." });
+            }
+
+            const card = rows[0];
+            return res.json({
+              succes: true,
+              mesaj: "Puncte adaugate cu succes.",
+              clientName: [card.firstName, card.lastName].filter(Boolean).join(" "),
+              storeName: store.name,
+              pointsAdded: parsedPoints,
+              pointsNow: card.points,
+              totalPointsEarned: card.total_points_earned,
+            });
+          });
+        },
+      );
+    });
+  });
+});
+
 // GET /api/reviews/:storeId — toate review-urile unui magazin
 app.get("/api/reviews/:storeId", verifyToken, (req, res) => {
   const { storeId } = req.params;
