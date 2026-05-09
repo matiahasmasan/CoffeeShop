@@ -636,6 +636,41 @@ app.get("/api/qr-token", verifyToken, (req, res) => {
   res.json({ qr_token: qrToken });
 });
 
+app.post("/api/qr/resolve", verifyToken, (req, res) => {
+  const { qrToken } = req.body;
+
+  if (!qrToken || typeof qrToken !== "string") {
+    return res.status(400).json({ mesaj: "QR token lipseste." });
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(qrToken, process.env.JWT_SECRET);
+  } catch {
+    return res.status(401).json({ mesaj: "QR token invalid sau expirat." });
+  }
+
+  if (decoded?.type !== "qr" || !decoded?.userId) {
+    return res.status(400).json({ mesaj: "QR token invalid pentru check-in." });
+  }
+
+  const sql = "SELECT firstName, lastName FROM users WHERE id = ? LIMIT 1";
+  con.query(sql, [decoded.userId], (err, result) => {
+    if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!result.length) {
+      return res.status(404).json({ mesaj: "Clientul nu a fost gasit." });
+    }
+
+    const user = result[0];
+    const clientName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+    return res.json({
+      succes: true,
+      clientName,
+      userId: decoded.userId,
+    });
+  });
+});
+
 // GET /api/reviews/:storeId — toate review-urile unui magazin
 app.get("/api/reviews/:storeId", verifyToken, (req, res) => {
   const { storeId } = req.params;

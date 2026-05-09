@@ -41,6 +41,7 @@ export default function BaristaDashboard() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanResult, setScanResult] = useState("");
   const [copied, setCopied] = useState(false);
+  const [scanLoading, setScanLoading] = useState(false);
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -52,11 +53,30 @@ export default function BaristaDashboard() {
   }, [user?.store_id]);
 
   // Called by QrScannerModal on successful scan
-  const handleScan = (value) => {
-    setScanResult(value);
+  const handleScan = async (value) => {
+    setScanLoading(true);
     setCopied(false);
-    // Briefly highlight the textbox so the barista sees the result
-    setTimeout(() => resultRef.current?.select(), 50);
+    try {
+      const res = await fetch(`${API}/api/qr/resolve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+        body: JSON.stringify({ qrToken: value }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.mesaj || "Invalid QR token.");
+
+      setScanResult(`${data.clientName}`);
+    } catch (err) {
+      setScanResult(err.message || "Could not read this QR code.");
+    } finally {
+      setScanLoading(false);
+      // Briefly highlight the textbox so the barista sees the result
+      setTimeout(() => resultRef.current?.select(), 50);
+    }
   };
 
   // Copy-to-clipboard helper
@@ -147,7 +167,7 @@ export default function BaristaDashboard() {
         </div>
 
         {/* Scan result — only shown after a scan */}
-        {scanResult && (
+        {(scanResult || scanLoading) && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6 animate-fade-in">
             <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
               Last scan result
@@ -157,7 +177,7 @@ export default function BaristaDashboard() {
                 ref={resultRef}
                 type="text"
                 readOnly
-                value={scanResult}
+                value={scanLoading ? "Looking up client..." : scanResult}
                 className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 font-mono focus:outline-none focus:ring-2 focus:ring-gray-300 truncate"
                 onClick={(e) => e.target.select()}
               />
