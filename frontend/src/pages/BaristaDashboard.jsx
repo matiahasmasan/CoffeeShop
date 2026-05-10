@@ -45,6 +45,7 @@ export default function BaristaDashboard() {
   const [scannedClient, setScannedClient] = useState(null);
   const [pointsToAdd, setPointsToAdd] = useState(1);
   const [addingPoints, setAddingPoints] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const resultRef = useRef(null);
 
   useEffect(() => {
@@ -54,6 +55,12 @@ export default function BaristaDashboard() {
       .then((d) => setStoreName(d.name ?? null))
       .catch(() => {});
   }, [user?.store_id]);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const t = setTimeout(() => setToastMessage(""), 2200);
+    return () => clearTimeout(t);
+  }, [toastMessage]);
 
   // Called by QrScannerModal on successful scan
   const handleScan = async (value) => {
@@ -108,11 +115,20 @@ export default function BaristaDashboard() {
         `${data.clientName} now has ${data.pointsNow} points at ${data.storeName}.`,
       );
       setCopied(false);
+      setToastMessage(`Added ${data.pointsAdded} point(s) to ${data.clientName}.`);
     } catch (err) {
       setScanResult(err.message || "Could not add points.");
     } finally {
       setAddingPoints(false);
     }
+  };
+
+  const handleScanNextCustomer = () => {
+    setScanResult("");
+    setScannedClient(null);
+    setPointsToAdd(1);
+    setCopied(false);
+    setScannerOpen(true);
   };
 
   // Copy-to-clipboard helper
@@ -163,6 +179,12 @@ export default function BaristaDashboard() {
 
       {/* Main */}
       <main className="flex-1 p-6 max-w-3xl w-full mx-auto">
+        {toastMessage && (
+          <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            {toastMessage}
+          </div>
+        )}
+
         {/* Welcome */}
         <div className="mb-6">
           <h3 className="text-2xl font-semibold text-gray-800">
@@ -236,21 +258,44 @@ export default function BaristaDashboard() {
               </button>
             </div>
             {scannedClient && (
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={pointsToAdd}
-                  onChange={(e) => setPointsToAdd(e.target.value)}
-                  className="w-full sm:w-28 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setPointsToAdd((prev) => Math.max(1, Number(prev) - 1))
+                    }
+                    disabled={addingPoints}
+                    className="h-10 w-10 rounded-lg border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-50"
+                    aria-label="Decrease points"
+                  >
+                    -
+                  </button>
+                  <div className="h-10 min-w-12 rounded-lg border border-gray-200 bg-gray-50 px-3 flex items-center justify-center text-sm font-semibold text-gray-800">
+                    {pointsToAdd}
+                  </div>
+                  <button
+                    onClick={() =>
+                      setPointsToAdd((prev) => Math.min(20, Number(prev) + 1))
+                    }
+                    disabled={addingPoints}
+                    className="h-10 w-10 rounded-lg border border-gray-200 bg-white text-lg font-semibold text-gray-700 disabled:opacity-50"
+                    aria-label="Increase points"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={handleAddPoints}
+                    disabled={addingPoints}
+                    className="h-10 flex-1 rounded-lg bg-indigo-600 px-4 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {addingPoints ? "Adding..." : "Add points"}
+                  </button>
+                </div>
                 <button
-                  onClick={handleAddPoints}
-                  disabled={addingPoints}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  onClick={handleScanNextCustomer}
+                  className="w-full h-10 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  {addingPoints ? "Adding..." : "Add points"}
+                  Scan next customer
                 </button>
               </div>
             )}
