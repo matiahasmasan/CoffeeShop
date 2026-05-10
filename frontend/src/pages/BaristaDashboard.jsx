@@ -11,6 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "../components/Sidebar";
 import QrScannerModal from "../components/QrScannerModal";
+import ToastMessage from "../components/ToastMessage";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -58,7 +59,7 @@ export default function BaristaDashboard() {
 
   useEffect(() => {
     if (!toastMessage) return;
-    const t = setTimeout(() => setToastMessage(""), 2200);
+    const t = setTimeout(() => setToastMessage(""), 4200);
     return () => clearTimeout(t);
   }, [toastMessage]);
 
@@ -111,11 +112,10 @@ export default function BaristaDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.mesaj || "Could not add points.");
 
-      setScanResult(
-        `${data.clientName} now has ${data.pointsNow} points at ${data.storeName}.`,
-      );
       setCopied(false);
-      setToastMessage(`Added ${data.pointsAdded} point(s) to ${data.clientName}.`);
+      setToastMessage(
+        `You have added ${data.pointsAdded} points to ${data.clientName}. Now ${data.clientName} has ${data.pointsNow} points at ${data.storeName}.`,
+      );
     } catch (err) {
       setScanResult(err.message || "Could not add points.");
     } finally {
@@ -179,12 +179,6 @@ export default function BaristaDashboard() {
 
       {/* Main */}
       <main className="flex-1 p-6 max-w-3xl w-full mx-auto">
-        {toastMessage && (
-          <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-            {toastMessage}
-          </div>
-        )}
-
         {/* Welcome */}
         <div className="mb-6">
           <h3 className="text-2xl font-semibold text-gray-800">
@@ -336,6 +330,7 @@ export default function BaristaDashboard() {
           </div>
         </div>
       </main>
+      <ToastMessage message={toastMessage} visible={Boolean(toastMessage)} />
     </div>
   );
 }
