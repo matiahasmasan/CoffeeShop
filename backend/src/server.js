@@ -211,7 +211,45 @@ app.post("/api/register", async (req, res) => {
 });
 
 app.get("/api/stores", verifyToken, (req, res) => {
-  const sql = `
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 8));
+  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+  const search = (req.query.search || "").trim();
+  const rating = parseInt(req.query.rating, 10) || 0;
+  const liked = req.query.liked === "true" || req.query.liked === "1";
+  const sortKey = req.query.sort || "az";
+
+  const sortMap = {
+    az: "s.name ASC",
+    za: "s.name DESC",
+    "rating-desc": "rating DESC, s.name ASC",
+    "rating-asc": "rating ASC, s.name ASC",
+  };
+  const orderBy = sortMap[sortKey] || sortMap.az;
+
+  const whereClauses = [];
+  const whereParams = [];
+  if (search) {
+    whereClauses.push("s.name LIKE ?");
+    whereParams.push(`%${search}%`);
+  }
+  const whereSql = whereClauses.length
+    ? `WHERE ${whereClauses.join(" AND ")}`
+    : "";
+
+  const havingClauses = [];
+  const havingParams = [];
+  if (rating > 0) {
+    havingClauses.push("rating >= ?");
+    havingParams.push(rating);
+  }
+  if (liked) {
+    havingClauses.push("is_liked = 1");
+  }
+  const havingSql = havingClauses.length
+    ? `HAVING ${havingClauses.join(" AND ")}`
+    : "";
+
+  const dataSql = `
     SELECT
       s.*,
       GROUP_CONCAT(DISTINCT si.url ORDER BY si.display_order SEPARATOR '|||') as images,
@@ -219,25 +257,62 @@ app.get("/api/stores", verifyToken, (req, res) => {
       COUNT(DISTINCT r.id) as review_count,
       ss.user_id as owner_id,
       u.firstName as ownerFirstName,
-      u.lastName as ownerLastName
+      u.lastName as ownerLastName,
+      MAX(CASE WHEN ls.user_id IS NOT NULL THEN 1 ELSE 0 END) as is_liked
     FROM stores s
     LEFT JOIN store_images si ON si.store_id = s.id
     LEFT JOIN reviews r ON r.store_id = s.id
     LEFT JOIN store_staff ss ON ss.store_id = s.id
     LEFT JOIN users u ON u.id = ss.user_id
+    LEFT JOIN liked_stores ls ON ls.store_id = s.id AND ls.user_id = ?
+    ${whereSql}
     GROUP BY s.id
+    ${havingSql}
+    ORDER BY ${orderBy}
+    LIMIT ? OFFSET ?
   `;
-  con.query(sql, (err, result) => {
-    if (err) {
-      console.error(err);
+  const dataParams = [
+    req.user.id,
+    ...whereParams,
+    ...havingParams,
+    limit,
+    offset,
+  ];
+
+  const countSql = `
+    SELECT COUNT(*) as total FROM (
+      SELECT s.id,
+        COALESCE(AVG(r.rating), 0) as rating,
+        MAX(CASE WHEN ls.user_id IS NOT NULL THEN 1 ELSE 0 END) as is_liked
+      FROM stores s
+      LEFT JOIN reviews r ON r.store_id = s.id
+      LEFT JOIN liked_stores ls ON ls.store_id = s.id AND ls.user_id = ?
+      ${whereSql}
+      GROUP BY s.id
+      ${havingSql}
+    ) sub
+  `;
+  const countParams = [req.user.id, ...whereParams, ...havingParams];
+
+  con.query(countSql, countParams, (countErr, countResult) => {
+    if (countErr) {
+      console.error(countErr);
       return res.status(500).json({ mesaj: "Eroare la server" });
     }
-    res.json(
-      result.map((r) => ({
-        ...r,
-        images: r.images ? r.images.split("|||") : [],
-      })),
-    );
+    const total = countResult[0]?.total ?? 0;
+    con.query(dataSql, dataParams, (dataErr, dataResult) => {
+      if (dataErr) {
+        console.error(dataErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      res.json({
+        stores: dataResult.map((r) => ({
+          ...r,
+          images: r.images ? r.images.split("|||") : [],
+        })),
+        total,
+      });
+    });
   });
 });
 
