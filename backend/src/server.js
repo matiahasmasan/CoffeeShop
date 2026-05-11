@@ -466,7 +466,10 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
   // 1. old owner (if exists)
   const checkSql = "SELECT user_id FROM store_staff WHERE store_id = ?";
   con.query(checkSql, [store_id], (checkErr, checkResult) => {
-    if (checkErr) return res.status(500).json({ mesaj: "Eroare la verificarea magazinului." });
+    if (checkErr)
+      return res
+        .status(500)
+        .json({ mesaj: "Eroare la verificarea magazinului." });
 
     const old_user_id = checkResult.length > 0 ? checkResult[0].user_id : null;
 
@@ -479,29 +482,42 @@ app.post("/api/store-staff", verifyToken, (req, res) => {
     con.query(sql, [store_id, user_id], (err, result) => {
       if (err) {
         console.error(err);
-        return res.status(500).json({ mesaj: "Eroare la asignarea utilizatorului." });
+        return res
+          .status(500)
+          .json({ mesaj: "Eroare la asignarea utilizatorului." });
       }
 
       // 3. upgrade new owner to role_id 3
-      const updateRoleSql = "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
+      const updateRoleSql =
+        "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1";
       con.query(updateRoleSql, [user_id], (updateErr) => {
-        if (updateErr) console.error("Eroare la actualizarea rolului:", updateErr);
+        if (updateErr)
+          console.error("Eroare la actualizarea rolului:", updateErr);
 
         // 4. take the old owner back to role_id 2 if they have no other stores
         if (old_user_id && old_user_id != user_id) {
-          const countStoresSql = "SELECT COUNT(*) as cnt FROM store_staff WHERE user_id = ?";
+          const countStoresSql =
+            "SELECT COUNT(*) as cnt FROM store_staff WHERE user_id = ?";
           con.query(countStoresSql, [old_user_id], (countErr, countResult) => {
             // make sure to log any error but not fail the main request
             if (!countErr && countResult[0].cnt === 0) {
-              const downgradeSql = "UPDATE users SET role_id = 2 WHERE id = ? AND role_id != 1";
+              const downgradeSql =
+                "UPDATE users SET role_id = 2 WHERE id = ? AND role_id != 1";
               con.query(downgradeSql, [old_user_id], (downErr) => {
-                if (downErr) console.error("Eroare la retrogradarea vechiului proprietar:", downErr);
+                if (downErr)
+                  console.error(
+                    "Eroare la retrogradarea vechiului proprietar:",
+                    downErr,
+                  );
               });
             }
           });
         }
 
-        const message = result.affectedRows > 1 ? "Proprietar actualizat cu succes." : "Proprietar asignat cu succes.";
+        const message =
+          result.affectedRows > 1
+            ? "Proprietar actualizat cu succes."
+            : "Proprietar asignat cu succes.";
         res.status(201).json({ succes: true, mesaj: message });
       });
     });
@@ -662,7 +678,9 @@ app.post("/api/qr/resolve", verifyToken, (req, res) => {
     }
 
     const user = result[0];
-    const clientName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+    const clientName = [user.firstName, user.lastName]
+      .filter(Boolean)
+      .join(" ");
     return res.json({
       succes: true,
       clientName,
@@ -684,13 +702,18 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
     return res.status(400).json({ mesaj: "Client invalid." });
   }
 
-  if (!Number.isInteger(parsedPoints) || parsedPoints <= 0 || parsedPoints > 20) {
+  if (
+    !Number.isInteger(parsedPoints) ||
+    parsedPoints <= 0 ||
+    parsedPoints > 20
+  ) {
     return res
       .status(400)
       .json({ mesaj: "Numarul de puncte trebuie sa fie intre 1 si 20." });
   }
 
-  const staffStoreSql = "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
   con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
     if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
     if (!staffRows.length) {
@@ -698,7 +721,8 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
     }
 
     const storeId = staffRows[0].store_id;
-    const storeSql = "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
+    const storeSql =
+      "SELECT id, name, max_points, store_points FROM stores WHERE id = ? LIMIT 1";
     con.query(storeSql, [storeId], (storeErr, storeRows) => {
       if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
       if (!storeRows.length) {
@@ -706,7 +730,14 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
       }
 
       const store = storeRows[0];
-      const maxPoints = Number(store.max_points) || 6;
+      const fromStorePoints = Number(store.store_points);
+      let maxPoints =
+        Number.isFinite(fromStorePoints) && fromStorePoints > 0
+          ? fromStorePoints
+          : Number(store.max_points);
+      if (!Number.isFinite(maxPoints) || maxPoints <= 0) {
+        maxPoints = 6;
+      }
       const upsertSql = `
         INSERT INTO loyalty_cards (user_id, store_id, points, total_points_earned, created_at)
         VALUES (?, ?, ?, ?, NOW())
@@ -719,7 +750,8 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
         upsertSql,
         [parsedCustomerUserId, storeId, parsedPoints, parsedPoints, maxPoints],
         (upsertErr) => {
-          if (upsertErr) return res.status(500).json({ mesaj: "Eroare la server" });
+          if (upsertErr)
+            return res.status(500).json({ mesaj: "Eroare la server" });
 
           const resultSql = `
             SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
@@ -728,23 +760,32 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
             WHERE lc.user_id = ? AND lc.store_id = ?
             LIMIT 1
           `;
-          con.query(resultSql, [parsedCustomerUserId, storeId], (resultErr, rows) => {
-            if (resultErr) return res.status(500).json({ mesaj: "Eroare la server" });
-            if (!rows.length) {
-              return res.status(404).json({ mesaj: "Clientul nu a fost gasit." });
-            }
+          con.query(
+            resultSql,
+            [parsedCustomerUserId, storeId],
+            (resultErr, rows) => {
+              if (resultErr)
+                return res.status(500).json({ mesaj: "Eroare la server" });
+              if (!rows.length) {
+                return res
+                  .status(404)
+                  .json({ mesaj: "Clientul nu a fost gasit." });
+              }
 
-            const card = rows[0];
-            return res.json({
-              succes: true,
-              mesaj: "Puncte adaugate cu succes.",
-              clientName: [card.firstName, card.lastName].filter(Boolean).join(" "),
-              storeName: store.name,
-              pointsAdded: parsedPoints,
-              pointsNow: card.points,
-              totalPointsEarned: card.total_points_earned,
-            });
-          });
+              const card = rows[0];
+              return res.json({
+                succes: true,
+                mesaj: "Puncte adaugate cu succes.",
+                clientName: [card.firstName, card.lastName]
+                  .filter(Boolean)
+                  .join(" "),
+                storeName: store.name,
+                pointsAdded: parsedPoints,
+                pointsNow: card.points,
+                totalPointsEarned: card.total_points_earned,
+              });
+            },
+          );
         },
       );
     });
@@ -904,7 +945,10 @@ app.post("/api/owner/baristas", verifyToken, async (req, res) => {
                 .status(409)
                 .json({ mesaj: "Email-ul sau telefonul este deja folosit." });
             }
-            console.error("Eroare MySQL la crearea contului (tabela users):", insertErr);
+            console.error(
+              "Eroare MySQL la crearea contului (tabela users):",
+              insertErr,
+            );
             return res
               .status(500)
               .json({ mesaj: "Eroare la crearea contului." });
@@ -918,7 +962,10 @@ app.post("/api/owner/baristas", verifyToken, async (req, res) => {
           `;
           con.query(insertStaffSql, [storeId, newUserId], (staffErr) => {
             if (staffErr) {
-              console.error("Eroare MySQL la asignare (tabela store_staff):", staffErr);
+              console.error(
+                "Eroare MySQL la asignare (tabela store_staff):",
+                staffErr,
+              );
               // Roll back: delete the user we just created
               con.query(
                 "DELETE FROM users WHERE id = ?",

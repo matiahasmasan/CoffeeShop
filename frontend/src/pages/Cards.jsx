@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { getUserCards } from "../data/cards";
+import { getStoreRewardStampCount } from "../utils/storeRewardPoints";
 
 function MyLoyaltyCard({ card, onClick }) {
-  const MAX_POINTS = 6;
+  const maxPoints = getStoreRewardStampCount(card);
   const points = card.points ?? 0;
 
   return (
@@ -15,7 +16,9 @@ function MyLoyaltyCard({ card, onClick }) {
     >
       <div
         className="w-full h-36 bg-cover bg-center relative"
-        style={{ backgroundImage: card.images?.[0] ? `url(${card.images[0]})` : "none" }}
+        style={{
+          backgroundImage: card.images?.[0] ? `url(${card.images[0]})` : "none",
+        }}
       >
         <div className="absolute inset-0 bg-black/30" />
         {card.logo_url && (
@@ -39,21 +42,26 @@ function MyLoyaltyCard({ card, onClick }) {
             Loyalty Progress
           </p>
           <p className="text-xs font-bold text-indigo-600">
-            {points}/{MAX_POINTS} ☕
+            {points}/{maxPoints} ☕
           </p>
         </div>
 
-        <div className="grid grid-cols-6 gap-1.5 mb-3">
-          {[...Array(MAX_POINTS)].map((_, i) => (
+        <div
+          className="grid gap-1.5 mb-3"
+          style={{
+            gridTemplateColumns: `repeat(${maxPoints}, minmax(0, 1fr))`,
+          }}
+        >
+          {[...Array(maxPoints)].map((_, i) => (
             <div
               key={i}
               className={`h-8 rounded-lg flex items-center justify-center text-sm transition-all ${
-                i < points
+                i < Math.min(points, maxPoints)
                   ? "bg-indigo-50 border-2 border-indigo-500"
                   : "bg-gray-50 border-2 border-dashed border-gray-200"
               }`}
             >
-              {i < points ? (
+              {i < Math.min(points, maxPoints) ? (
                 "☕"
               ) : (
                 <span className="text-gray-300 text-xs">·</span>
@@ -65,13 +73,15 @@ function MyLoyaltyCard({ card, onClick }) {
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-500"
-            style={{ width: `${(points / MAX_POINTS) * 100}%` }}
+            style={{
+              width: `${Math.min(points / maxPoints, 1) * 100}%`,
+            }}
           />
         </div>
         <p className="text-xs text-gray-400 mt-2 text-center">
-          {MAX_POINTS - points === 0
+          {points >= maxPoints
             ? "🎉 You've earned a free coffee!"
-            : `${MAX_POINTS - points} more stamp${MAX_POINTS - points === 1 ? "" : "s"} to a free coffee`}
+            : `${maxPoints - points} more stamp${maxPoints - points === 1 ? "" : "s"} to a free coffee`}
         </p>
       </div>
     </div>

@@ -14,6 +14,7 @@ import {
   likeStore,
   unlikeStore,
 } from "../data/cards";
+import { getStoreRewardStampCount } from "../utils/storeRewardPoints";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
@@ -283,7 +284,10 @@ export default function CardDetail() {
         <ImageScroller images={card.images} />
 
         {card.card_id ? (
-          <LoyaltyPoints currentPoints={card.points} maxPoints={6} />
+          <LoyaltyPoints
+            currentPoints={card.points}
+            maxPoints={getStoreRewardStampCount(card)}
+          />
         ) : (
           <button
             onClick={async () => {
