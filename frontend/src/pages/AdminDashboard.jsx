@@ -31,8 +31,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStores = async () => {
       setLoading(true);
-      const data = await getCards();
-      setStores(data);
+      const { stores } = await getCards({ limit: 1000 });
+      setStores(stores);
       setLoading(false);
     };
     fetchStores();

@@ -1,9 +1,18 @@
 const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
-export async function getCards() {
+export async function getCards(params = {}) {
   const token = localStorage.getItem("token");
+  const query = new URLSearchParams();
+  if (params.limit != null) query.set("limit", params.limit);
+  if (params.offset != null) query.set("offset", params.offset);
+  if (params.search) query.set("search", params.search);
+  if (params.rating) query.set("rating", params.rating);
+  if (params.liked) query.set("liked", "true");
+  if (params.sort) query.set("sort", params.sort);
+  const qs = query.toString();
+
   try {
-    const response = await fetch(`${API_URL}/stores`, {
+    const response = await fetch(`${API_URL}/stores${qs ? `?${qs}` : ""}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -16,14 +25,14 @@ export async function getCards() {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login";
-        return [];
+        return { stores: [], total: 0 };
       }
       throw new Error("Failed to fetch stores");
     }
     return await response.json();
   } catch (error) {
     console.error("Error fetching stores:", error);
-    return [];
+    return { stores: [], total: 0 };
   }
 }
 
