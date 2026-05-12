@@ -805,11 +805,7 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
       }
 
       const store = storeRows[0];
-      const fromStorePoints = Number(store.store_points);
-      let maxPoints =
-        Number.isFinite(fromStorePoints) && fromStorePoints > 0
-          ? fromStorePoints
-          : Number(store.max_points);
+      let maxPoints = Number(store.max_points);
       if (!Number.isFinite(maxPoints) || maxPoints <= 0) {
         maxPoints = 6;
       }
