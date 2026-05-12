@@ -728,8 +728,36 @@ app.get("/api/qr-token", verifyToken, (req, res) => {
 });
 
 app.post("/api/qr/resolve", verifyToken, (req, res) => {
-  const { qrToken } = req.body;
+  const { qrToken, userId } = req.body;
 
+  // Handle manual user ID lookup
+  if (userId) {
+    const parsedUserId = Number(userId);
+    if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+      return res.status(400).json({ mesaj: "User ID invalid." });
+    }
+
+    const sql = "SELECT firstName, lastName FROM users WHERE id = ? LIMIT 1";
+    con.query(sql, [parsedUserId], (err, result) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!result.length) {
+        return res.status(404).json({ mesaj: "Clientul nu a fost gasit." });
+      }
+
+      const user = result[0];
+      const clientName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ");
+      return res.json({
+        succes: true,
+        clientName,
+        userId: parsedUserId,
+      });
+    });
+    return;
+  }
+
+  // Handle QR token scan
   if (!qrToken || typeof qrToken !== "string") {
     return res.status(400).json({ mesaj: "QR token lipseste." });
   }

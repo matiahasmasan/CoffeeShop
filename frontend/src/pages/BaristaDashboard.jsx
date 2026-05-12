@@ -75,13 +75,17 @@ export default function BaristaDashboard() {
     setCopied(false);
     setScannedClient(null);
     try {
+      // Detect if value is a numeric user ID or a QR token (JWT)
+      const isNumericId = /^\d+$/.test(value);
+      const requestBody = isNumericId ? { userId: value } : { qrToken: value };
+
       const res = await fetch(`${API}/api/qr/resolve`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...authHeader(),
         },
-        body: JSON.stringify({ qrToken: value }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await res.json();
@@ -373,16 +377,16 @@ export default function BaristaDashboard() {
             {/* Redeem reward section */}
             {scannedClient && scanMode === "redeem" && (
               <div className="mt-4 space-y-3">
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
-                  <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold mb-2">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-xs uppercase tracking-wide text-blue-700 font-semibold mb-2">
                     Points required for free coffee
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-3xl font-bold text-amber-900">
+                      <p className="text-3xl font-bold text-blue-900">
                         {storePointsThreshold ?? 6}
                       </p>
-                      <p className="text-xs text-amber-700 mt-1">
+                      <p className="text-xs text-blue-700 mt-1">
                         points needed
                       </p>
                     </div>
@@ -403,7 +407,7 @@ export default function BaristaDashboard() {
                   className={`w-full h-11 rounded-lg px-4 text-white text-sm font-semibold transition-colors
                     ${
                       scannedClient.points >= (storePointsThreshold ?? 6)
-                        ? "bg-green-600 hover:bg-green-700 disabled:opacity-60"
+                        ? "bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
                         : "bg-gray-300 cursor-not-allowed"
                     }`}
                 >

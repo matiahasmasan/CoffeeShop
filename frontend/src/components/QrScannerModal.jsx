@@ -20,6 +20,7 @@ export default function QrScannerModal({ isOpen, onClose, onScan }) {
   const [torchOn, setTorchOn] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [scanned, setScanned] = useState(false); // prevent double-firing
+  const [manualId, setManualId] = useState(""); // manual user ID entry
 
   // ── Bootstrap scanner when modal opens ───────────────────────────────────
   useEffect(() => {
@@ -102,6 +103,15 @@ export default function QrScannerModal({ isOpen, onClose, onScan }) {
     }
   }, [torchOn]);
 
+  // ── Manual user ID submission ────────────────────────────────────────────
+  const handleManualIdSubmit = (e) => {
+    e.preventDefault();
+    if (!manualId.trim()) return;
+    setScanned(true);
+    onScan(manualId.trim());
+    onClose();
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Scan Customer QR" size="md">
       <div className="flex flex-col items-center gap-4">
@@ -173,6 +183,29 @@ export default function QrScannerModal({ isOpen, onClose, onScan }) {
             automatically.
           </p>
         )}
+
+        {/* Manual user ID entry */}
+        <div className="w-full">
+          <form onSubmit={handleManualIdSubmit} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Or enter user ID..."
+              value={manualId}
+              onChange={(e) => setManualId(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              type="submit"
+              disabled={!manualId.trim()}
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Search
+            </button>
+          </form>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            No camera? Enter the customer's user ID manually.
+          </p>
+        </div>
       </div>
     </Modal>
   );
