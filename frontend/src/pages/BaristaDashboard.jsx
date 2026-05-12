@@ -47,13 +47,19 @@ export default function BaristaDashboard() {
   const [pointsToAdd, setPointsToAdd] = useState(1);
   const [addingPoints, setAddingPoints] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [scanMode, setScanMode] = useState("add"); // 'add' or 'redeem'
+  const [redeemingReward, setRedeemingReward] = useState(false);
+  const [storePointsThreshold, setStorePointsThreshold] = useState(null);
   const resultRef = useRef(null);
 
   useEffect(() => {
     if (!user?.store_id) return;
     fetch(`${API}/api/stores/${user.store_id}`, { headers: authHeader() })
       .then((r) => r.json())
-      .then((d) => setStoreName(d.name ?? null))
+      .then((d) => {
+        setStoreName(d.name ?? null);
+        setStorePointsThreshold(d.store_points ?? 6);
+      })
       .catch(() => {});
   }, [user?.store_id]);
 
@@ -82,7 +88,34 @@ export default function BaristaDashboard() {
       if (!res.ok) throw new Error(data?.mesaj || "Invalid QR token.");
 
       setScanResult(`${data.clientName}`);
-      setScannedClient({ userId: data.userId, name: data.clientName });
+
+      // If in redeem mode, fetch the customer's card for this store
+      if (scanMode === "redeem") {
+        try {
+          const cardRes = await fetch(
+            `${API}/api/barista/customer-card/${user?.store_id}/${data.userId}`,
+            { headers: authHeader() },
+          );
+          const cardData = await cardRes.json();
+          if (!cardRes.ok) {
+            throw new Error(
+              cardData?.mesaj || "Could not fetch customer points.",
+            );
+          }
+          setScannedClient({
+            userId: data.userId,
+            name: data.clientName,
+            points: cardData.points ?? 0,
+          });
+        } catch (err) {
+          setScanResult(
+            err.message || "Could not fetch customer points. No card found.",
+          );
+          setScannedClient(null);
+        }
+      } else {
+        setScannedClient({ userId: data.userId, name: data.clientName });
+      }
     } catch (err) {
       setScanResult(err.message || "Could not read this QR code.");
     } finally {
@@ -123,11 +156,42 @@ export default function BaristaDashboard() {
     }
   };
 
+  const handleRedeemReward = async () => {
+    if (!scannedClient?.userId) return;
+
+    setRedeemingReward(true);
+    try {
+      const res = await fetch(`${API}/api/barista/reward/redeem`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+        body: JSON.stringify({
+          customerUserId: scannedClient.userId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.mesaj || "Could not redeem reward.");
+
+      setCopied(false);
+      setToastMessage(
+        `${data.clientName} has redeemed a free coffee! Remaining points: ${data.pointsRemaining}`,
+      );
+    } catch (err) {
+      setScanResult(err.message || "Could not redeem reward.");
+    } finally {
+      setRedeemingReward(false);
+    }
+  };
+
   const handleScanNextCustomer = () => {
     setScanResult("");
     setScannedClient(null);
     setPointsToAdd(1);
     setCopied(false);
+    setScanMode("add"); // Reset to add mode
     setScannerOpen(true);
   };
 
@@ -159,7 +223,9 @@ export default function BaristaDashboard() {
       {/* QR Scanner Modal */}
       <QrScannerModal
         isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
+        onClose={() => {
+          setScannerOpen(false);
+        }}
         onScan={handleScan}
       />
 
@@ -193,7 +259,10 @@ export default function BaristaDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <button
             className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
-            onClick={() => setScannerOpen(true)}
+            onClick={() => {
+              setScanMode("add");
+              setScannerOpen(true);
+            }}
           >
             <div className="w-12 h-12 rounded-lg bg-gray-900 text-white flex items-center justify-center">
               <FontAwesomeIcon icon={faQrcode} className="text-lg" />
@@ -206,7 +275,10 @@ export default function BaristaDashboard() {
 
           <button
             className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
-            onClick={() => {}}
+            onClick={() => {
+              setScanMode("redeem");
+              setScannerOpen(true);
+            }}
           >
             <div className="w-12 h-12 rounded-lg bg-gray-900 text-white flex items-center justify-center">
               <FontAwesomeIcon icon={faMugHot} className="text-lg" />
@@ -222,7 +294,9 @@ export default function BaristaDashboard() {
         {(scanResult || scanLoading) && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6 animate-fade-in">
             <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
-              Last scan result
+              {scanMode === "add"
+                ? "Last scan result"
+                : "Customer for redemption"}
             </p>
             <div className="flex items-center gap-2">
               <input
@@ -251,7 +325,9 @@ export default function BaristaDashboard() {
                 />
               </button>
             </div>
-            {scannedClient && (
+
+            {/* Add points section */}
+            {scannedClient && scanMode === "add" && (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <button
@@ -290,6 +366,59 @@ export default function BaristaDashboard() {
                   className="w-full h-10 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Scan next customer
+                </button>
+              </div>
+            )}
+
+            {/* Redeem reward section */}
+            {scannedClient && scanMode === "redeem" && (
+              <div className="mt-4 space-y-3">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-xs uppercase tracking-wide text-amber-700 font-semibold mb-2">
+                    Points required for free coffee
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-3xl font-bold text-amber-900">
+                        {storePointsThreshold ?? 6}
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        points needed
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-gray-800">
+                        {scannedClient.points ?? 0}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        points available
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRedeemReward}
+                  disabled={redeemingReward}
+                  className={`w-full h-11 rounded-lg px-4 text-white text-sm font-semibold transition-colors
+                    ${
+                      scannedClient.points >= (storePointsThreshold ?? 6)
+                        ? "bg-green-600 hover:bg-green-700 disabled:opacity-60"
+                        : "bg-gray-300 cursor-not-allowed"
+                    }`}
+                >
+                  {redeemingReward
+                    ? "Processing..."
+                    : scannedClient.points >= (storePointsThreshold ?? 6)
+                      ? "✓ Redeem free coffee"
+                      : "Insufficient points"}
+                </button>
+
+                <button
+                  onClick={handleScanNextCustomer}
+                  className="w-full h-10 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Scan another customer
                 </button>
               </div>
             )}

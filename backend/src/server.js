@@ -867,6 +867,174 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
   });
 });
 
+// POST /api/barista/reward/redeem - redeem a reward (free coffee)
+app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
+  if (req.user.role !== 4 && req.user.role !== 3) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const { customerUserId } = req.body;
+  const parsedCustomerUserId = Number(customerUserId);
+
+  if (!Number.isInteger(parsedCustomerUserId) || parsedCustomerUserId <= 0) {
+    return res.status(400).json({ mesaj: "Client invalid." });
+  }
+
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+
+    const storeId = staffRows[0].store_id;
+    const storeSql =
+      "SELECT id, name, store_points FROM stores WHERE id = ? LIMIT 1";
+    con.query(storeSql, [storeId], (storeErr, storeRows) => {
+      if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!storeRows.length) {
+        return res.status(404).json({ mesaj: "Magazinul nu a fost gasit." });
+      }
+
+      const store = storeRows[0];
+      const rewardThreshold = Number(store.store_points) || 6;
+
+      // Check if customer has enough points
+      const checkSql = `
+        SELECT lc.points, u.firstName, u.lastName
+        FROM loyalty_cards lc
+        INNER JOIN users u ON u.id = lc.user_id
+        WHERE lc.user_id = ? AND lc.store_id = ?
+        LIMIT 1
+      `;
+      con.query(
+        checkSql,
+        [parsedCustomerUserId, storeId],
+        (checkErr, checkRows) => {
+          if (checkErr)
+            return res.status(500).json({ mesaj: "Eroare la server" });
+          if (!checkRows.length) {
+            return res.status(404).json({
+              mesaj: "Clientul nu are card de loialitate la acest magazin.",
+            });
+          }
+
+          const card = checkRows[0];
+          const currentPoints = Number(card.points);
+
+          if (currentPoints < rewardThreshold) {
+            return res.status(400).json({
+              mesaj: `Clientul nu are suficiente puncte. Necesare: ${rewardThreshold}, Are: ${currentPoints}`,
+              clientName: [card.firstName, card.lastName]
+                .filter(Boolean)
+                .join(" "),
+              pointsNeeded: rewardThreshold,
+              pointsHas: currentPoints,
+            });
+          }
+
+          // Deduct points
+          const newPoints = currentPoints - rewardThreshold;
+          const updateSql = `
+            UPDATE loyalty_cards
+            SET points = ?
+            WHERE user_id = ? AND store_id = ?
+          `;
+          con.query(
+            updateSql,
+            [newPoints, parsedCustomerUserId, storeId],
+            (updateErr) => {
+              if (updateErr)
+                return res.status(500).json({ mesaj: "Eroare la server" });
+
+              return res.json({
+                succes: true,
+                mesaj: "Recompensa eliberata cu succes!",
+                clientName: [card.firstName, card.lastName]
+                  .filter(Boolean)
+                  .join(" "),
+                storeName: store.name,
+                pointsRedeemed: rewardThreshold,
+                pointsRemaining: newPoints,
+              });
+            },
+          );
+        },
+      );
+    });
+  });
+});
+
+// GET /api/barista/customer-card/:storeId/:customerId - get a customer's card for reward redemption
+app.get(
+  "/api/barista/customer-card/:storeId/:customerId",
+  verifyToken,
+  (req, res) => {
+    if (req.user.role !== 4 && req.user.role !== 3) {
+      return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+    }
+
+    const { storeId, customerId } = req.params;
+    const parsedStoreId = Number(storeId);
+    const parsedCustomerId = Number(customerId);
+
+    if (!Number.isInteger(parsedStoreId) || parsedStoreId <= 0) {
+      return res.status(400).json({ mesaj: "Magazin invalid." });
+    }
+    if (!Number.isInteger(parsedCustomerId) || parsedCustomerId <= 0) {
+      return res.status(400).json({ mesaj: "Client invalid." });
+    }
+
+    // Verify barista belongs to this store
+    const staffStoreSql =
+      "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+    con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+      if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!staffRows.length) {
+        return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+      }
+      if (staffRows[0].store_id !== parsedStoreId) {
+        return res
+          .status(403)
+          .json({ mesaj: "Nu esti asignat acestui magazin." });
+      }
+
+      // Fetch customer's card
+      const cardSql = `
+      SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
+      FROM loyalty_cards lc
+      INNER JOIN users u ON u.id = lc.user_id
+      WHERE lc.user_id = ? AND lc.store_id = ?
+      LIMIT 1
+    `;
+      con.query(
+        cardSql,
+        [parsedCustomerId, parsedStoreId],
+        (cardErr, cardRows) => {
+          if (cardErr)
+            return res.status(500).json({ mesaj: "Eroare la server" });
+
+          if (!cardRows.length) {
+            return res.status(404).json({
+              mesaj: "Clientul nu are card de loialitate la acest magazin.",
+            });
+          }
+
+          const card = cardRows[0];
+          return res.json({
+            points: Number(card.points),
+            totalPointsEarned: Number(card.total_points_earned),
+            clientName: [card.firstName, card.lastName]
+              .filter(Boolean)
+              .join(" "),
+          });
+        },
+      );
+    });
+  },
+);
+
 // GET /api/reviews/:storeId — toate review-urile unui magazin
 app.get("/api/reviews/:storeId", verifyToken, (req, res) => {
   const { storeId } = req.params;
