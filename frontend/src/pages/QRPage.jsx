@@ -9,6 +9,7 @@ const API = import.meta.env.VITE_API_URL;
 export default function QRPage() {
   const navigate = useNavigate();
   const [token, setToken] = useState(null);
+  const [shortCode, setShortCode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("qr");
@@ -23,6 +24,7 @@ export default function QRPage() {
       });
       const data = await res.json();
       setToken(data.qr_token);
+      setShortCode(data.short_code);
     } catch (err) {
       setError("Could not generate QR code.");
     } finally {
@@ -45,6 +47,15 @@ export default function QRPage() {
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
         {token && <QRCode token={token} />}
+
+        {shortCode && (
+          <div className="text-center mt-2">
+            <p className="text-xs text-gray-500 mb-1">Or enter this code</p>
+            <p className="text-3xl font-mono font-bold tracking-widest text-gray-800">
+              {shortCode}
+            </p>
+          </div>
+        )}
       </div>
       <Footer activeTab={activeTab} onTabChange={setActiveTab} />
     </div>

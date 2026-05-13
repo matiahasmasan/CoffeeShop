@@ -50,7 +50,18 @@ export default function BaristaDashboard() {
   const [scanMode, setScanMode] = useState("add"); // 'add' or 'redeem'
   const [redeemingReward, setRedeemingReward] = useState(false);
   const [storePointsThreshold, setStorePointsThreshold] = useState(null);
+  const [manualCode, setManualCode] = useState("");
   const resultRef = useRef(null);
+
+  const handleManualSubmit = (mode) => {
+    const trimmed = manualCode.trim().toUpperCase();
+    if (!trimmed) return;
+    setScanMode(mode);
+    setScanResult("");
+    setScannedClient(null);
+    handleScan(trimmed);
+    setManualCode("");
+  };
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -75,9 +86,15 @@ export default function BaristaDashboard() {
     setCopied(false);
     setScannedClient(null);
     try {
-      // Detect if value is a numeric user ID or a QR token (JWT)
-      const isNumericId = /^\d+$/.test(value);
-      const requestBody = isNumericId ? { userId: value } : { qrToken: value };
+      // Detect input type: numeric userId, hashids short code, or QR token (JWT)
+      let requestBody;
+      if (/^\d+$/.test(value)) {
+        requestBody = { userId: value };
+      } else if (/^[A-Z2-9]+$/.test(value)) {
+        requestBody = { shortCode: value };
+      } else {
+        requestBody = { qrToken: value };
+      }
 
       const res = await fetch(`${API}/api/qr/resolve`, {
         method: "POST",
@@ -292,6 +309,37 @@ export default function BaristaDashboard() {
               <p className="text-xs text-gray-500">Validate a customer claim</p>
             </div>
           </button>
+        </div>
+
+        {/* Manual code entry */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+          <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
+            Or enter customer code manually
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              placeholder="e.g. XK7P2M"
+              className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono uppercase tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              maxLength={20}
+            />
+            <button
+              onClick={() => handleManualSubmit("add")}
+              disabled={!manualCode.trim() || scanLoading}
+              className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Add points
+            </button>
+            <button
+              onClick={() => handleManualSubmit("redeem")}
+              disabled={!manualCode.trim() || scanLoading}
+              className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Redeem
+            </button>
+          </div>
         </div>
 
         {/* Scan result — only shown after a scan */}
