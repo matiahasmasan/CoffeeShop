@@ -10,6 +10,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import fs from "fs";
 import rateLimit from "express-rate-limit";
+import Hashids from "hashids";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +41,12 @@ const upload = multer({
 });
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+const hashids = new Hashids(
+  process.env.HASHIDS_SALT,
+  6,
+  "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+);
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -723,8 +730,9 @@ app.get("/api/qr-token", verifyToken, (req, res) => {
     process.env.JWT_SECRET,
     { expiresIn: "5m" },
   );
+  const shortCode = hashids.encode(req.user.id);
 
-  res.json({ qr_token: qrToken });
+  res.json({ qr_token: qrToken, short_code: shortCode });
 });
 
 app.post("/api/qr/resolve", verifyToken, (req, res) => {
