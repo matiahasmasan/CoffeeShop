@@ -69,7 +69,7 @@ export default function BaristaDashboard() {
       .then((r) => r.json())
       .then((d) => {
         setStoreName(d.name ?? null);
-        setStorePointsThreshold(d.max_points ?? 6);
+        setStorePointsThreshold(d.store_points ?? 6);
       })
       .catch(() => {});
   }, [user?.store_id]);
