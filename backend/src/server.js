@@ -870,7 +870,7 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
 
     const storeId = staffRows[0].store_id;
     const storeSql =
-      "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
+      "SELECT id, name, store_points, max_points FROM stores WHERE id = ? LIMIT 1";
     con.query(storeSql, [storeId], (storeErr, storeRows) => {
       if (storeErr) {
         console.error("[points/add] store lookup:", storeErr);
@@ -966,7 +966,7 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
 
     const storeId = staffRows[0].store_id;
     const storeSql =
-      "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
+      "SELECT id, name, store_points, max_points FROM stores WHERE id = ? LIMIT 1";
     con.query(storeSql, [storeId], (storeErr, storeRows) => {
       if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
       if (!storeRows.length) {
@@ -974,7 +974,7 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
       }
 
       const store = storeRows[0];
-      const rewardThreshold = Number(store.max_points) || 6;
+      const rewardThreshold = Number(store.store_points) || 6;
 
       // Check if customer has enough points
       const checkSql = `
