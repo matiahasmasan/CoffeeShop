@@ -860,16 +860,22 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
   const staffStoreSql =
     "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
   con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
-    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (staffErr) {
+      console.error("[points/add] staff lookup:", staffErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
     if (!staffRows.length) {
       return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
     }
 
     const storeId = staffRows[0].store_id;
     const storeSql =
-      "SELECT id, name, max_points, store_points FROM stores WHERE id = ? LIMIT 1";
+      "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
     con.query(storeSql, [storeId], (storeErr, storeRows) => {
-      if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (storeErr) {
+        console.error("[points/add] store lookup:", storeErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
       if (!storeRows.length) {
         return res.status(404).json({ mesaj: "Magazinul nu a fost gasit." });
       }
@@ -891,8 +897,10 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
         upsertSql,
         [parsedCustomerUserId, storeId, parsedPoints, parsedPoints, maxPoints],
         (upsertErr) => {
-          if (upsertErr)
+          if (upsertErr) {
+            console.error("[points/add] upsert:", upsertErr);
             return res.status(500).json({ mesaj: "Eroare la server" });
+          }
 
           const resultSql = `
             SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
@@ -905,8 +913,10 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
             resultSql,
             [parsedCustomerUserId, storeId],
             (resultErr, rows) => {
-              if (resultErr)
+              if (resultErr) {
+                console.error("[points/add] result fetch:", resultErr);
                 return res.status(500).json({ mesaj: "Eroare la server" });
+              }
               if (!rows.length) {
                 return res
                   .status(404)
@@ -956,7 +966,7 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
 
     const storeId = staffRows[0].store_id;
     const storeSql =
-      "SELECT id, name, store_points FROM stores WHERE id = ? LIMIT 1";
+      "SELECT id, name, max_points FROM stores WHERE id = ? LIMIT 1";
     con.query(storeSql, [storeId], (storeErr, storeRows) => {
       if (storeErr) return res.status(500).json({ mesaj: "Eroare la server" });
       if (!storeRows.length) {
@@ -964,7 +974,7 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
       }
 
       const store = storeRows[0];
-      const rewardThreshold = Number(store.store_points) || 6;
+      const rewardThreshold = Number(store.max_points) || 6;
 
       // Check if customer has enough points
       const checkSql = `

@@ -59,7 +59,7 @@ export default function BaristaDashboard() {
     setScanMode(mode);
     setScanResult("");
     setScannedClient(null);
-    handleScan(trimmed);
+    handleScan(trimmed, mode);
     setManualCode("");
   };
 
@@ -69,7 +69,7 @@ export default function BaristaDashboard() {
       .then((r) => r.json())
       .then((d) => {
         setStoreName(d.name ?? null);
-        setStorePointsThreshold(d.store_points ?? 6);
+        setStorePointsThreshold(d.max_points ?? 6);
       })
       .catch(() => {});
   }, [user?.store_id]);
@@ -81,7 +81,7 @@ export default function BaristaDashboard() {
   }, [toastMessage]);
 
   // Called by QrScannerModal on successful scan
-  const handleScan = async (value) => {
+  const handleScan = async (value, mode = scanMode) => {
     setScanLoading(true);
     setCopied(false);
     setScannedClient(null);
@@ -111,7 +111,7 @@ export default function BaristaDashboard() {
       setScanResult(`${data.clientName}`);
 
       // If in redeem mode, fetch the customer's card for this store
-      if (scanMode === "redeem") {
+      if (mode === "redeem") {
         try {
           const cardRes = await fetch(
             `${API}/api/barista/customer-card/${user?.store_id}/${data.userId}`,
