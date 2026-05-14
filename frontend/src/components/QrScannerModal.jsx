@@ -20,7 +20,6 @@ export default function QrScannerModal({ isOpen, onClose, onScan }) {
   const [torchOn, setTorchOn] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [scanned, setScanned] = useState(false); // prevent double-firing
-  const [manualId, setManualId] = useState(""); // manual user ID entry
 
   // ── Bootstrap scanner when modal opens ───────────────────────────────────
   useEffect(() => {
@@ -102,15 +101,6 @@ export default function QrScannerModal({ isOpen, onClose, onScan }) {
       // Torch not supported — silently ignore
     }
   }, [torchOn]);
-
-  // ── Manual user ID submission ────────────────────────────────────────────
-  const handleManualIdSubmit = (e) => {
-    e.preventDefault();
-    if (!manualId.trim()) return;
-    setScanned(true);
-    onScan(manualId.trim());
-    onClose();
-  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Scan Customer QR" size="md">
