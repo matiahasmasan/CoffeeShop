@@ -47,75 +47,73 @@ export default function MenuModal({ isOpen, onClose, storeId, storeName }) {
       title={`Menu - ${storeName}`}
       size="lg"
     >
-      <div className="flex-1 overflow-y-auto p-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-gray-500">Loading menu...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        ) : !hasMenu ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-amber-700 text-sm">
-              This coffee shop doesn't have a menu yet.
-            </p>
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-amber-700 text-sm">No menu items available.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {categories.map((category) => (
-              <div key={category.id}>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
-                  {category.name}
-                </h3>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <p className="text-gray-500">Loading menu...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      ) : !hasMenu ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-amber-700 text-sm">
+            This coffee shop doesn't have a menu yet.
+          </p>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-amber-700 text-sm">No menu items available.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {categories.map((category) => (
+            <div key={category.id}>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">
+                {category.name}
+              </h3>
 
-                {category.items.length === 0 ? (
-                  <p className="text-gray-500 text-sm">
-                    No items in this category
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {category.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`border rounded-lg p-4 ${
-                          item.available
-                            ? "border-gray-200 bg-white"
-                            : "border-gray-200 bg-gray-50 opacity-60"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-1">
-                          <h4 className="font-semibold text-gray-900 text-sm flex-1">
-                            {item.name}
-                            {!item.available && (
-                              <span className="ml-2 text-xs font-normal text-gray-500">
-                                (Unavailable)
-                              </span>
-                            )}
-                          </h4>
-                          <p className="text-indigo-600 font-bold text-sm whitespace-nowrap">
-                            ${item.price.toFixed(2)}
-                          </p>
-                        </div>
-                        {item.description && (
-                          <p className="text-gray-600 text-xs leading-relaxed">
-                            {item.description}
-                          </p>
-                        )}
+              {category.items.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  No items in this category
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {category.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`border rounded-lg p-4 ${
+                        item.available
+                          ? "border-gray-200 bg-white"
+                          : "border-gray-200 bg-gray-50 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <h4 className="font-semibold text-gray-900 text-sm flex-1">
+                          {item.name}
+                          {!item.available && (
+                            <span className="ml-2 text-xs font-normal text-gray-500">
+                              (Unavailable)
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-indigo-600 font-bold text-sm whitespace-nowrap">
+                          ${item.price.toFixed(2)}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                      {item.description && (
+                        <p className="text-gray-600 text-xs leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
   );
 }
