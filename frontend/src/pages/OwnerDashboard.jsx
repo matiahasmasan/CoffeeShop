@@ -7,8 +7,6 @@ import {
   faTrash,
   faPlus,
   faBars,
-  faHouse,
-  faArrowRightArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import SearchBar from "../components/SearchBar";
 import Sidebar from "../components/Sidebar";
@@ -16,19 +14,9 @@ import ViewBaristaModal from "../components/ViewBaristaModal";
 import EditBaristaModal from "../components/EditBaristaModal";
 import DeleteBaristaModal from "../components/DeleteBaristaModal";
 import AddBaristaModal from "../components/AddBaristaModal";
+import { OWNER_LINKS } from "../constants/ownerLinks";
 
 const API = import.meta.env.VITE_API_URL;
-
-// OwnerDashboard — sidebar links
-const OWNER_LINKS = [
-  { label: "Home", icon: faHouse, path: "/owner" },
-  {
-    label: "Transactions",
-    icon: faArrowRightArrowLeft,
-    path: "/owner/transactions",
-  },
-  { label: "Menu", icon: faPen, path: "/owner/menu" },
-];
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
