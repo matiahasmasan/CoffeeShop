@@ -1411,6 +1411,80 @@ app.delete("/api/owner/baristas/:id", verifyToken, (req, res) => {
   );
 });
 
+// GET /api/menu/store/:storeId - Get menu categories and items for a store
+app.get("/api/menu/store/:storeId", verifyToken, (req, res) => {
+  const { storeId } = req.params;
+  const parsedStoreId = Number(storeId);
+
+  if (!Number.isInteger(parsedStoreId) || parsedStoreId <= 0) {
+    return res.status(400).json({ mesaj: "Store ID invalid." });
+  }
+
+  // Get all menu categories for this store with their items
+  const sql = `
+    SELECT 
+      mc.id,
+      mc.store_id,
+      mc.name as category_name,
+      mc.slug,
+      mc.display_order,
+      mi.id as item_id,
+      mi.name as item_name,
+      mi.description,
+      mi.price,
+      mi.available
+    FROM menu_categories mc
+    LEFT JOIN menu_items mi ON mi.category_id = mc.id
+    WHERE mc.store_id = ?
+    ORDER BY mc.display_order ASC, mi.name ASC
+  `;
+
+  con.query(sql, [parsedStoreId], (err, results) => {
+    if (err) {
+      console.error("[menu/store] query error:", err);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+
+    if (results.length === 0) {
+      return res.json({
+        hasMenu: false,
+        categories: [],
+      });
+    }
+
+    // Organize results by category
+    const categoriesMap = {};
+    results.forEach((row) => {
+      if (!categoriesMap[row.id]) {
+        categoriesMap[row.id] = {
+          id: row.id,
+          name: row.category_name,
+          slug: row.slug,
+          displayOrder: row.display_order,
+          items: [],
+        };
+      }
+
+      if (row.item_id) {
+        categoriesMap[row.id].items.push({
+          id: row.item_id,
+          name: row.item_name,
+          description: row.description,
+          price: parseFloat(row.price),
+          available: row.available === 1,
+        });
+      }
+    });
+
+    const categories = Object.values(categoriesMap);
+
+    res.json({
+      hasMenu: true,
+      categories,
+    });
+  });
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",

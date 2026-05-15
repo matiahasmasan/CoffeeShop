@@ -47,12 +47,12 @@ export default function Modal({
     >
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full ${sizeClass} flex flex-col overflow-hidden`}
+        className={`bg-white rounded-2xl shadow-xl w-full ${sizeClass} flex flex-col overflow-hidden max-h-[90vh]`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className={`flex items-center justify-between px-6 py-4 border-b border-gray-100 ${
+          className={`flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0 ${
             danger ? "bg-red-50" : "bg-white"
           }`}
         >
@@ -73,7 +73,7 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
       </div>
     </div>
   );
