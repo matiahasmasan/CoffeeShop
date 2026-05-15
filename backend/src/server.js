@@ -1485,6 +1485,57 @@ app.get("/api/menu/store/:storeId", verifyToken, (req, res) => {
   });
 });
 
+// GET /api/owner/menu - Get all menu items for owner's store
+app.get("/api/owner/menu", verifyToken, (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!staffRows.length)
+        return res
+          .status(403)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const store_id = staffRows[0].store_id;
+
+      const sql = `
+        SELECT 
+          mi.id, mi.store_id, mi.category_id, mi.name, mi.description, mi.price, mi.available,
+          mc.name as category_name, mc.slug as category_slug
+        FROM menu_items mi
+        LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+        WHERE mi.store_id = ?
+        ORDER BY mc.display_order ASC, mi.name ASC
+      `;
+
+      con.query(sql, [store_id], (qErr, results) => {
+        if (qErr) {
+          console.error("[owner/menu] query error:", qErr);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+
+        const items = results.map((row) => ({
+          id: row.id,
+          storeId: row.store_id,
+          categoryId: row.category_id,
+          name: row.name,
+          description: row.description,
+          price: parseFloat(row.price),
+          available: row.available === 1,
+          categoryName: row.category_name,
+          categorySlug: row.category_slug,
+        }));
+
+        res.json({ success: true, items });
+      });
+    },
+  );
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",

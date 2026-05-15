@@ -27,6 +27,7 @@ const OWNER_LINKS = [
     icon: faArrowRightArrowLeft,
     path: "/owner/transactions",
   },
+  { label: "Menu", icon: faPen, path: "/owner/menu" },
 ];
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,

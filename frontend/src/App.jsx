@@ -39,6 +39,7 @@ import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
+import OwnerMenu from "./pages/OwnerMenu.jsx";
 import BaristaDashboard from "./pages/BaristaDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
@@ -54,11 +55,30 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/qr" element={<QRPage />} />
-        <Route path="/owner-dashboard" element={
-          <ProtectedRoute allowedRoles={[3]}>
-            <OwnerDashboard />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/owner-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <OwnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <OwnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/menu"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <OwnerMenu />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/barista-dashboard"
@@ -66,7 +86,8 @@ function App() {
             <ProtectedRoute allowedRoles={[4]}>
               <BaristaDashboard />
             </ProtectedRoute>
-        }/>
+          }
+        />
 
         <Route
           path="/home"
