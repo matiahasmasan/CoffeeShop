@@ -195,6 +195,58 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {/* Pending business submissions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="font-bold text-gray-800 text-lg">
+              Pending submissions
+              <span className="ml-2 text-sm font-normal text-gray-400">
+                ({pendingStores.length})
+              </span>
+            </h3>
+          </div>
+
+          {pendingLoading ? (
+            <div className="p-6 text-center text-gray-400">Loading...</div>
+          ) : pendingStores.length === 0 ? (
+            <div className="p-6 text-center text-gray-400">
+              No pending submissions.
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {pendingStores.map((store) => (
+                <li
+                  key={store.id}
+                  className="px-6 py-4 flex items-center justify-between gap-4"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-800 truncate">
+                      {store.name}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {store.address}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleModerate(store.id, "approve")}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleModerate(store.id, "reject")}
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h3 className="font-bold text-gray-800 text-lg">Shops</h3>
