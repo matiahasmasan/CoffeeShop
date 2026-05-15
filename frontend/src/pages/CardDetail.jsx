@@ -7,6 +7,7 @@ import CardMap from "../components/CardMap";
 import SocialLinks from "../components/SocialLinks";
 import LoyaltyPoints from "../components/LoyaltyPoints";
 import StarRating from "../components/StarRating";
+import MenuModal from "../components/MenuModal";
 import {
   getCardById,
   claimCard,
@@ -123,6 +124,7 @@ export default function CardDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -301,6 +303,13 @@ export default function CardDetail() {
           </button>
         )}
 
+        <button
+          onClick={() => setShowMenu(true)}
+          className="w-full py-3 mb-4 border-2 border-indigo-600 text-indigo-600 rounded-xl font-semibold text-sm hover:bg-indigo-50 transition"
+        >
+          📋 View Menu
+        </button>
+
         <div className="bg-white rounded-lg p-6 mb-4">
           <p className="text-gray-700 text-sm leading-relaxed mb-4">
             {card.description}
@@ -424,6 +433,13 @@ export default function CardDetail() {
             </button>
           )}
         </div>
+
+        <MenuModal
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          storeId={card.id}
+          storeName={card.name}
+        />
       </div>
 
       <Footer />
