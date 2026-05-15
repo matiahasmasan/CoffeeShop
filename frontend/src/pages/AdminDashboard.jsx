@@ -17,6 +17,8 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [managingStoreId, setManagingStoreId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [pendingStores, setPendingStores] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -28,14 +30,26 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 // test
+  const refreshStores = async () => {
+    const { stores } = await getCards({ limit: 1000 });
+    setStores(stores);
+  };
+
+  const fetchPending = async () => {
+    setPendingLoading(true);
+    const { stores } = await getCards({ status: "pending", limit: 1000 });
+    setPendingStores(stores);
+    setPendingLoading(false);
+  };
+
   useEffect(() => {
     const fetchStores = async () => {
       setLoading(true);
-      const { stores } = await getCards({ limit: 1000 });
-      setStores(stores);
+      await refreshStores();
       setLoading(false);
     };
     fetchStores();
+    fetchPending();
   }, []);
 
   useEffect(() => {
@@ -77,6 +91,27 @@ export default function AdminDashboard() {
       });
       if (!res.ok) throw new Error("Error deleting store.");
       setStores((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleModerate = async (id, action) => {
+    const label = action === "approve" ? "approve" : "reject";
+    if (!window.confirm(`Are you sure you want to ${label} this submission?`))
+      return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/stores/${id}/${action}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mesaj || "Action failed.");
+      setPendingStores((prev) => prev.filter((s) => s.id !== id));
+      if (action === "approve") {
+        await refreshStores();
+      }
     } catch (err) {
       alert(err.message);
     }

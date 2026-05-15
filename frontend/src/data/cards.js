@@ -9,6 +9,7 @@ export async function getCards(params = {}) {
   if (params.rating) query.set("rating", params.rating);
   if (params.liked) query.set("liked", "true");
   if (params.sort) query.set("sort", params.sort);
+  if (params.status) query.set("status", params.status);
   const qs = query.toString();
 
   try {
