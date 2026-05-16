@@ -102,11 +102,17 @@ const verifyToken = (req, res, next) => {
 
 // Functie creare token
 const generateToken = (user) => {
-  return jwt.sign(
-    { id: user.id, email: user.email, role: user.role_id },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" },
-  );
+  const payload = {
+    id: user.id,
+    email: user.email,
+    role: user.role_id,
+  };
+
+  if (user.store_id) {
+    payload.store_id = user.store_id;
+  }
+
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
 async function hashPassword(password) {
@@ -145,7 +151,6 @@ app.post("/api/login", loginLimiter, async (req, res) => {
         .json({ succes: false, mesaj: "Email sau parola gresita" });
     }
 
-    const token = generateToken(user);
     const userPayload = {
       id: user.id,
       email: user.email,
@@ -153,6 +158,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       role_id: user.role_id,
     };
 
+    // For staff (owners/baristas), fetch store_id first
     if (user.role_id === 3 || user.role_id === 4) {
       const storeStaffSql =
         "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
@@ -162,6 +168,8 @@ app.post("/api/login", loginLimiter, async (req, res) => {
             "Eroare la preluarea magazinului pentru staff:",
             storeErr,
           );
+          // Continue without store_id
+          const token = generateToken(user);
           return res.json({
             succes: true,
             mesaj: "Te-ai logat!",
@@ -169,9 +177,14 @@ app.post("/api/login", loginLimiter, async (req, res) => {
             user: userPayload,
           });
         }
+
         if (storeResult.length > 0) {
+          user.store_id = storeResult[0].store_id;
           userPayload.store_id = storeResult[0].store_id;
         }
+
+        // Generate token with store_id included
+        const token = generateToken(user);
         return res.json({
           succes: true,
           mesaj: "Te-ai logat!",
@@ -180,6 +193,8 @@ app.post("/api/login", loginLimiter, async (req, res) => {
         });
       });
     } else {
+      // For regular users, generate token directly
+      const token = generateToken(user);
       return res.json({
         succes: true,
         mesaj: "Te-ai logat!",
@@ -1802,6 +1817,128 @@ app.get("/api/menu/store/:storeId", verifyToken, (req, res) => {
       hasMenu: true,
       categories,
     });
+  });
+});
+
+// GET /api/owner/menu - Get all menu items for owner's store
+app.get("/api/owner/menu", verifyToken, (req, res) => {
+  if (req.user.role !== 3)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ?",
+    [req.user.id],
+    (err, staffRows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!staffRows.length)
+        return res
+          .status(403)
+          .json({ mesaj: "Nu ești asociat niciunui magazin." });
+
+      const store_id = staffRows[0].store_id;
+
+      const sql = `
+        SELECT 
+          mi.id, mi.store_id, mi.category_id, mi.name, mi.description, mi.price, mi.available,
+          mc.name as category_name, mc.slug as category_slug
+        FROM menu_items mi
+        LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+        WHERE mi.store_id = ?
+        ORDER BY mc.display_order ASC, mi.name ASC
+      `;
+
+      con.query(sql, [store_id], (qErr, results) => {
+        if (qErr) {
+          console.error("[owner/menu] query error:", qErr);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+
+        const items = results.map((row) => ({
+          id: row.id,
+          storeId: row.store_id,
+          categoryId: row.category_id,
+          name: row.name,
+          description: row.description,
+          price: parseFloat(row.price),
+          available: row.available === 1,
+          categoryName: row.category_name,
+          categorySlug: row.category_slug,
+        }));
+
+        res.json({ success: true, items });
+      });
+    },
+  );
+});
+
+// PUT /api/owner/menu/:id - Update a menu item
+app.put("/api/owner/menu/:id", verifyToken, (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.user;
+  const { name, description, price, available } = req.body;
+
+  const parsedId = Number(id);
+  if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    return res.status(400).json({ mesaj: "Item ID invalid." });
+  }
+
+  if (!name || typeof name !== "string") {
+    return res.status(400).json({ mesaj: "Product name is required." });
+  }
+
+  const parsedPrice = parseFloat(price);
+  if (isNaN(parsedPrice) || parsedPrice < 0) {
+    return res.status(400).json({ mesaj: "Valid price is required." });
+  }
+
+  // Check if item belongs to owner's store
+  const checkSql = `
+    SELECT mi.id, mi.store_id
+    FROM menu_items mi
+    WHERE mi.id = ? AND mi.store_id = ?
+    LIMIT 1
+  `;
+
+  con.query(checkSql, [parsedId, store_id], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error("[menu update] check error:", checkErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+
+    if (!checkResults.length) {
+      return res
+        .status(404)
+        .json({ mesaj: "Item not found or access denied." });
+    }
+
+    const updateSql = `
+      UPDATE menu_items
+      SET name = ?, description = ?, price = ?, available = ?
+      WHERE id = ? AND store_id = ?
+    `;
+
+    con.query(
+      updateSql,
+      [
+        name.trim(),
+        (description || "").trim(),
+        parsedPrice,
+        available ? 1 : 0,
+        parsedId,
+        store_id,
+      ],
+      (updateErr) => {
+        if (updateErr) {
+          console.error("[menu update] update error:", updateErr);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+
+        res.json({
+          succes: true,
+          mesaj: "Produs actualizat cu succes.",
+        });
+      },
+    );
   });
 });
 
