@@ -10,6 +10,7 @@ import {
 import SearchBar from "../components/SearchBar";
 import Sidebar from "../components/Sidebar";
 import ViewMenuItemModal from "../components/ViewMenuItemModal";
+import EditMenuItemModal from "../components/EditMenuItemModal";
 import { OWNER_LINKS } from "../constants/ownerLinks";
 
 const API = import.meta.env.VITE_API_URL;
@@ -35,6 +36,7 @@ export default function OwnerMenu() {
 
   // Modal state
   const [viewItem, setViewItem] = useState(null);
+  const [editItem, setEditItem] = useState(null);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -210,7 +212,7 @@ export default function OwnerMenu() {
                         <button
                           title="Edit"
                           className="text-gray-400 hover:text-blue-600 transition-colors"
-                          onClick={() => {}}
+                          onClick={() => setEditItem(item)}
                         >
                           <FontAwesomeIcon icon={faPen} />
                         </button>
@@ -233,6 +235,11 @@ export default function OwnerMenu() {
 
       {/* Modals */}
       <ViewMenuItemModal item={viewItem} onClose={() => setViewItem(null)} />
+      <EditMenuItemModal
+        item={editItem}
+        onClose={() => setEditItem(null)}
+        onUpdated={fetchMenuItems}
+      />
     </div>
   );
 }
