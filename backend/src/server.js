@@ -102,16 +102,16 @@ const verifyToken = (req, res, next) => {
 
 // Functie creare token
 const generateToken = (user) => {
-  const payload = { 
-    id: user.id, 
-    email: user.email, 
-    role: user.role_id 
+  const payload = {
+    id: user.id,
+    email: user.email,
+    role: user.role_id,
   };
-  
+
   if (user.store_id) {
     payload.store_id = user.store_id;
   }
-  
+
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
@@ -1586,7 +1586,9 @@ app.put("/api/owner/menu/:id", verifyToken, (req, res) => {
     }
 
     if (!checkResults.length) {
-      return res.status(404).json({ mesaj: "Item not found or access denied." });
+      return res
+        .status(404)
+        .json({ mesaj: "Item not found or access denied." });
     }
 
     const updateSql = `
@@ -1615,7 +1617,7 @@ app.put("/api/owner/menu/:id", verifyToken, (req, res) => {
           succes: true,
           mesaj: "Produs actualizat cu succes.",
         });
-      }
+      },
     );
   });
 });
