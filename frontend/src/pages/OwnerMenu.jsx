@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import SearchBar from "../components/SearchBar";
 import Sidebar from "../components/Sidebar";
+import ViewMenuItemModal from "../components/ViewMenuItemModal";
 import { OWNER_LINKS } from "../constants/ownerLinks";
 
 const API = import.meta.env.VITE_API_URL;
@@ -31,6 +32,9 @@ export default function OwnerMenu() {
 
   // UI state
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Modal state
+  const [viewItem, setViewItem] = useState(null);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -199,7 +203,7 @@ export default function OwnerMenu() {
                         <button
                           title="View"
                           className="text-gray-400 hover:text-blue-600 transition-colors"
-                          onClick={() => {}}
+                          onClick={() => setViewItem(item)}
                         >
                           <FontAwesomeIcon icon={faEye} />
                         </button>
@@ -226,6 +230,9 @@ export default function OwnerMenu() {
           )}
         </div>
       </main>
+
+      {/* Modals */}
+      <ViewMenuItemModal item={viewItem} onClose={() => setViewItem(null)} />
     </div>
   );
 }
