@@ -11,6 +11,7 @@ import SearchBar from "../components/SearchBar";
 import Sidebar from "../components/Sidebar";
 import ViewMenuItemModal from "../components/ViewMenuItemModal";
 import EditMenuItemModal from "../components/EditMenuItemModal";
+import DeleteMenuItemModal from "../components/DeleteMenuItemModal";
 import { OWNER_LINKS } from "../constants/ownerLinks";
 
 const API = import.meta.env.VITE_API_URL;
@@ -37,6 +38,7 @@ export default function OwnerMenu() {
   // Modal state
   const [viewItem, setViewItem] = useState(null);
   const [editItem, setEditItem] = useState(null);
+  const [deleteItem, setDeleteItem] = useState(null);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -219,7 +221,7 @@ export default function OwnerMenu() {
                         <button
                           title="Delete"
                           className="text-gray-400 hover:text-red-600 transition-colors"
-                          onClick={() => {}}
+                          onClick={() => setDeleteItem(item)}
                         >
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
@@ -239,6 +241,11 @@ export default function OwnerMenu() {
         item={editItem}
         onClose={() => setEditItem(null)}
         onUpdated={fetchMenuItems}
+      />
+      <DeleteMenuItemModal
+        item={deleteItem}
+        onClose={() => setDeleteItem(null)}
+        onDeleted={fetchMenuItems}
       />
     </div>
   );

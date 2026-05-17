@@ -1622,6 +1622,55 @@ app.put("/api/owner/menu/:id", verifyToken, (req, res) => {
   });
 });
 
+// DELETE /api/owner/menu/:id - Delete a menu item
+app.delete("/api/owner/menu/:id", verifyToken, (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.user;
+
+  const parsedId = Number(id);
+  if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    return res.status(400).json({ mesaj: "Item ID invalid." });
+  }
+
+  // Check if item belongs to owner's store
+  const checkSql = `
+    SELECT mi.id, mi.store_id
+    FROM menu_items mi
+    WHERE mi.id = ? AND mi.store_id = ?
+    LIMIT 1
+  `;
+
+  con.query(checkSql, [parsedId, store_id], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error("[menu delete] check error:", checkErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+
+    if (!checkResults.length) {
+      return res
+        .status(404)
+        .json({ mesaj: "Item not found or access denied." });
+    }
+
+    const deleteSql = `
+      DELETE FROM menu_items
+      WHERE id = ? AND store_id = ?
+    `;
+
+    con.query(deleteSql, [parsedId, store_id], (deleteErr) => {
+      if (deleteErr) {
+        console.error("[menu delete] delete error:", deleteErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+
+      res.json({
+        succes: true,
+        mesaj: "Produs șters cu succes.",
+      });
+    });
+  });
+});
+
 app.use((req, res, next) => {
   res.status(404).json({
     error: "Not found",
