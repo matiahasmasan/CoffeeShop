@@ -123,6 +123,7 @@ async function hashPassword(password) {
 const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 5,
+  skipSuccessfulRequests: true,
   message: {
     mesaj:
       "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later.",
