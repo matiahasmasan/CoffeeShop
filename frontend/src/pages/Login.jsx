@@ -6,6 +6,7 @@ const API = import.meta.env.VITE_API_URL;
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -25,6 +26,12 @@ export default function Login() {
       } else {
         navigate("/home");
       }
+    }
+
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
     }
   }, [navigate]);
 
