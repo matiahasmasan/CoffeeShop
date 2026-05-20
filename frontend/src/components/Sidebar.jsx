@@ -35,7 +35,11 @@ export default function Sidebar({ isOpen, onClose, storeName, links = [] }) {
   }, [isOpen]);
 
   const handleLogout = () => {
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
     localStorage.clear();
+    if (rememberedEmail) {
+      localStorage.setItem("rememberedEmail", rememberedEmail);
+    }
     navigate("/");
   };
 

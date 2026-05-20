@@ -73,7 +73,11 @@ export default function AdminDashboard() {
   }, [user]);
 
   const handleLogout = () => {
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
     localStorage.clear();
+    if (rememberedEmail) {
+      localStorage.setItem("rememberedEmail", rememberedEmail);
+    }
     navigate("/");
   };
 
