@@ -135,6 +135,7 @@ async function hashPassword(password) {
 const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 5,
+  skipSuccessfulRequests: true,
   message: {
     mesaj:
       "There have been several failed attempts to sign in from this account or IP address. Please wait a while and try again later.",
@@ -266,6 +267,18 @@ app.get("/api/stores", verifyToken, (req, res) => {
     whereClauses.push("s.name LIKE ?");
     whereParams.push(`%${search}%`);
   }
+
+  // Visibility: regular users only see approved stores.
+  // Admins (role 1) may request a specific status via ?status=
+  const allowedStatuses = ["pending", "approved", "rejected"];
+  if (req.user.role === 1 && allowedStatuses.includes(req.query.status)) {
+    whereClauses.push("s.status = ?");
+    whereParams.push(req.query.status);
+  } else {
+    whereClauses.push("s.status = ?");
+    whereParams.push("approved");
+  }
+
   const whereSql = whereClauses.length
     ? `WHERE ${whereClauses.join(" AND ")}`
     : "";
@@ -501,34 +514,342 @@ app.delete("/api/stores/:id", verifyToken, (req, res) => {
   });
 });
 
+// POST /api/stores/submit - self-service store listing by a regular user
+app.post("/api/stores/submit", verifyToken, (req, res) => {
+  const userId = req.user.id;
+  const {
+    name,
+    address,
+    logo_url,
+    description,
+    hours,
+    phone,
+    email,
+    links,
+    maps_link,
+    menu,
+  } = req.body;
+
+  if (!name || !address) {
+    return res
+      .status(400)
+      .json({ mesaj: "Numele și adresa sunt obligatorii." });
+  }
+
+  // Validate the optional menu payload up front
+  const menuInput = Array.isArray(menu) ? menu : [];
+  for (const category of menuInput) {
+    if (
+      !category ||
+      typeof category.name !== "string" ||
+      !category.name.trim()
+    ) {
+      return res
+        .status(400)
+        .json({ mesaj: "Fiecare categorie de meniu trebuie să aibă un nume." });
+    }
+    const items = Array.isArray(category.items) ? category.items : [];
+    for (const item of items) {
+      if (!item || typeof item.name !== "string" || !item.name.trim()) {
+        return res
+          .status(400)
+          .json({ mesaj: "Fiecare produs din meniu trebuie să aibă un nume." });
+      }
+      const price = Number(item.price);
+      if (!Number.isFinite(price) || price < 0) {
+        return res.status(400).json({
+          mesaj: "Prețul produselor trebuie să fie un număr pozitiv.",
+        });
+      }
+    }
+  }
+
+  // Block users who already belong to a store or have a pending request
+  con.query(
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1",
+    [userId],
+    (staffErr, staffRows) => {
+      if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (staffRows.length) {
+        return res
+          .status(409)
+          .json({ mesaj: "Ești deja asociat unui magazin." });
+      }
+
+      con.query(
+        "SELECT id FROM stores WHERE submitted_by = ? AND status = 'pending' LIMIT 1",
+        [userId],
+        (pendErr, pendRows) => {
+          if (pendErr)
+            return res.status(500).json({ mesaj: "Eroare la server" });
+          if (pendRows.length) {
+            return res.status(409).json({
+              mesaj: "Ai deja o cerere de listare în așteptare.",
+            });
+          }
+
+          // All checks passed -> insert store + menu inside a transaction
+          con.beginTransaction((txErr) => {
+            if (txErr)
+              return res.status(500).json({ mesaj: "Eroare la server" });
+
+            const storeSql = `
+              INSERT INTO stores
+                (name, address, logo_url, description, hours, phone, email, links, maps_link, status, submitted_by)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+            `;
+            const storeValues = [
+              name,
+              address,
+              logo_url || null,
+              description || null,
+              hours || null,
+              phone || null,
+              email || null,
+              links || null,
+              maps_link || null,
+              userId,
+            ];
+
+            con.query(storeSql, storeValues, (storeErr, storeResult) => {
+              if (storeErr) {
+                return con.rollback(() =>
+                  res
+                    .status(500)
+                    .json({ mesaj: "Eroare la trimiterea cererii." }),
+                );
+              }
+
+              const storeId = storeResult.insertId;
+
+              // Insert menu categories one by one (need each category id)
+              const insertCategory = (index) => {
+                if (index >= menuInput.length) {
+                  return con.commit((commitErr) => {
+                    if (commitErr) {
+                      return con.rollback(() =>
+                        res
+                          .status(500)
+                          .json({ mesaj: "Eroare la trimiterea cererii." }),
+                      );
+                    }
+                    return res.status(201).json({
+                      succes: true,
+                      mesaj:
+                        "Cererea a fost trimisă. Așteaptă aprobarea administratorului.",
+                      id: storeId,
+                    });
+                  });
+                }
+
+                const category = menuInput[index];
+                const slug =
+                  category.name
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-+|-+$/g, "") || `categorie-${index + 1}`;
+
+                con.query(
+                  "INSERT INTO menu_categories (store_id, name, slug, display_order) VALUES (?, ?, ?, ?)",
+                  [storeId, category.name.trim(), slug, index],
+                  (catErr, catResult) => {
+                    if (catErr) {
+                      return con.rollback(() =>
+                        res
+                          .status(500)
+                          .json({ mesaj: "Eroare la salvarea meniului." }),
+                      );
+                    }
+
+                    const categoryId = catResult.insertId;
+                    const items = (
+                      Array.isArray(category.items) ? category.items : []
+                    ).filter((it) => it && it.name && it.name.trim());
+
+                    if (items.length === 0) {
+                      return insertCategory(index + 1);
+                    }
+
+                    const itemValues = items.map((it) => [
+                      categoryId,
+                      it.name.trim(),
+                      it.description ? String(it.description).trim() : null,
+                      Number(it.price) || 0,
+                      it.available === false ? 0 : 1,
+                    ]);
+
+                    con.query(
+                      "INSERT INTO menu_items (category_id, name, description, price, available) VALUES ?",
+                      [itemValues],
+                      (itemErr) => {
+                        if (itemErr) {
+                          return con.rollback(() =>
+                            res
+                              .status(500)
+                              .json({ mesaj: "Eroare la salvarea meniului." }),
+                          );
+                        }
+                        insertCategory(index + 1);
+                      },
+                    );
+                  },
+                );
+              };
+
+              insertCategory(0);
+            });
+          });
+        },
+      );
+    },
+  );
+});
+
+// PUT /api/stores/:id/approve - admin approves a pending store listing
+app.put("/api/stores/:id/approve", verifyToken, (req, res) => {
+  if (req.user.role !== 1)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { id } = req.params;
+
+  con.query(
+    "SELECT id, status, submitted_by FROM stores WHERE id = ?",
+    [id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la server" });
+      if (!rows.length)
+        return res.status(404).json({ mesaj: "Magazinul nu a fost găsit." });
+
+      const store = rows[0];
+      if (store.status !== "pending") {
+        return res
+          .status(400)
+          .json({ mesaj: "Magazinul nu este în așteptare." });
+      }
+      if (!store.submitted_by) {
+        return res
+          .status(400)
+          .json({ mesaj: "Magazinul nu are un proprietar propus." });
+      }
+
+      con.beginTransaction((txErr) => {
+        if (txErr) return res.status(500).json({ mesaj: "Eroare la server" });
+
+        con.query(
+          "UPDATE stores SET status = 'approved' WHERE id = ?",
+          [id],
+          (updErr) => {
+            if (updErr)
+              return con.rollback(() =>
+                res.status(500).json({ mesaj: "Eroare la aprobare." }),
+              );
+
+            con.query(
+              "INSERT INTO store_staff (store_id, user_id) VALUES (?, ?)",
+              [id, store.submitted_by],
+              (staffErr) => {
+                if (staffErr)
+                  return con.rollback(() =>
+                    res.status(500).json({ mesaj: "Eroare la aprobare." }),
+                  );
+
+                con.query(
+                  "UPDATE users SET role_id = 3 WHERE id = ? AND role_id != 1",
+                  [store.submitted_by],
+                  (roleErr) => {
+                    if (roleErr)
+                      return con.rollback(() =>
+                        res.status(500).json({ mesaj: "Eroare la aprobare." }),
+                      );
+
+                    con.commit((commitErr) => {
+                      if (commitErr)
+                        return con.rollback(() =>
+                          res
+                            .status(500)
+                            .json({ mesaj: "Eroare la aprobare." }),
+                        );
+                      res.json({
+                        succes: true,
+                        mesaj: "Magazin aprobat cu succes!",
+                      });
+                    });
+                  },
+                );
+              },
+            );
+          },
+        );
+      });
+    },
+  );
+});
+
+// PUT /api/stores/:id/reject - admin rejects a pending store listing
+app.put("/api/stores/:id/reject", verifyToken, (req, res) => {
+  if (req.user.role !== 1)
+    return res.status(403).json({ mesaj: "Acces interzis." });
+
+  const { id } = req.params;
+
+  con.query(
+    "UPDATE stores SET status = 'rejected' WHERE id = ? AND status = 'pending'",
+    [id],
+    (err, result) => {
+      if (err) return res.status(500).json({ mesaj: "Eroare la respingere." });
+      if (result.affectedRows === 0)
+        return res.status(404).json({
+          mesaj: "Magazinul nu a fost găsit sau nu este în așteptare.",
+        });
+      res.json({ succes: true, mesaj: "Magazin respins." });
+    },
+  );
+});
+
 // Add image(s) to a store
 app.post(
   "/api/stores/:id/images",
   verifyToken,
   upload.array("images", 10),
   (req, res) => {
-    if (req.user.role !== 1)
-      return res.status(403).json({ mesaj: "Acces interzis." });
-
     const { id } = req.params;
     if (!req.files || req.files.length === 0)
       return res.status(400).json({ mesaj: "Niciun fișier trimis." });
 
-    const values = req.files.map((file, i) => [
-      id,
-      `http://localhost:8000/uploads/${file.filename}`,
-      i,
-    ]);
-
+    // Admins, or the user who submitted this store, may add images
     con.query(
-      "INSERT INTO store_images (store_id, url, display_order) VALUES ?",
-      [values],
-      (err) => {
-        if (err)
-          return res
-            .status(500)
-            .json({ mesaj: "Eroare la salvarea imaginilor." });
-        res.status(201).json({ succes: true, mesaj: "Imagini adăugate." });
+      "SELECT submitted_by FROM stores WHERE id = ?",
+      [id],
+      (lookupErr, storeRows) => {
+        if (lookupErr)
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        if (!storeRows.length)
+          return res.status(404).json({ mesaj: "Magazinul nu a fost găsit." });
+
+        const isAdmin = req.user.role === 1;
+        const isSubmitter = storeRows[0].submitted_by === req.user.id;
+        if (!isAdmin && !isSubmitter) {
+          return res.status(403).json({ mesaj: "Acces interzis." });
+        }
+
+        const values = req.files.map((file, i) => [
+          id,
+          `http://localhost:8000/uploads/${file.filename}`,
+          i,
+        ]);
+
+        con.query(
+          "INSERT INTO store_images (store_id, url, display_order) VALUES ?",
+          [values],
+          (err) => {
+            if (err)
+              return res
+                .status(500)
+                .json({ mesaj: "Eroare la salvarea imaginilor." });
+            res.status(201).json({ succes: true, mesaj: "Imagini adăugate." });
+          },
+        );
       },
     );
   },

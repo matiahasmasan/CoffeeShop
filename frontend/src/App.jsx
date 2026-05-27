@@ -46,6 +46,7 @@ import BaristaDashboard from "./pages/BaristaDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
 import QRPage from "./pages/QRPage.jsx";
 import Cards from "./pages/Cards.jsx";
+import ListBusiness from "./pages/ListBusiness.jsx";
 
 function App() {
   useSessionGuard();
@@ -144,6 +145,15 @@ function App() {
           element={
             <ProtectedRoute>
               <CardDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/list-business"
+          element={
+            <ProtectedRoute>
+              <ListBusiness />
             </ProtectedRoute>
           }
         />

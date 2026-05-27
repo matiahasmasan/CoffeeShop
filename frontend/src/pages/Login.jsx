@@ -6,6 +6,7 @@ const API = import.meta.env.VITE_API_URL;
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -25,6 +26,12 @@ export default function Login() {
       } else {
         navigate("/home");
       }
+    }
+
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
     }
   }, [navigate]);
 
@@ -46,6 +53,11 @@ export default function Login() {
     if (data.succes) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
       if (data.user.role_id === 3) {
         navigate("/owner-dashboard");
       } else if (data.user.role_id === 1) {
@@ -106,6 +118,22 @@ export default function Login() {
               required
             />
           </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 text-indigo-500 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+            />
+            <label
+              htmlFor="rememberMe"
+              className="text-sm text-gray-700 cursor-pointer select-none"
+            >
+              Remember me
+            </label>
+          </div>
+
           {error && (
             <p className="text-red-500 text-sm mt-2">{error}</p>
           )}

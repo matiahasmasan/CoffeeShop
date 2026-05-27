@@ -23,6 +23,7 @@ export default function Settings() {
         <div className="mt-6 flex justify-center">
           <button
             type="button"
+            onClick={() => navigate("/list-business")}
             className="flex items-center px-4 py-2 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all duration-200 shadow-sm"
           >
             List your businesses

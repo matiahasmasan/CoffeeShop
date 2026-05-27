@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [managingStoreId, setManagingStoreId] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingStores, setPendingStores] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -31,15 +33,27 @@ export default function AdminDashboard() {
       setUser(storedUser);
     }
   }, [navigate]);
+// test
+  const refreshStores = async () => {
+    const { stores } = await getCards({ limit: 1000 });
+    setStores(stores);
+  };
+
+  const fetchPending = async () => {
+    setPendingLoading(true);
+    const { stores } = await getCards({ status: "pending", limit: 1000 });
+    setPendingStores(stores);
+    setPendingLoading(false);
+  };
 
   useEffect(() => {
     const fetchStores = async () => {
       setLoading(true);
-      const { stores } = await getCards({ limit: 1000 });
-      setStores(stores);
+      await refreshStores();
       setLoading(false);
     };
     fetchStores();
+    fetchPending();
   }, []);
 
   useEffect(() => {
@@ -62,6 +76,15 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
+  const handleLogout = () => {
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    localStorage.clear();
+    if (rememberedEmail) {
+      localStorage.setItem("rememberedEmail", rememberedEmail);
+    }
+    navigate("/");
+  };
+
   const toggleRow = (idx) => {
     setExpandedRow(expandedRow === idx ? null : idx);
   };
@@ -76,6 +99,27 @@ export default function AdminDashboard() {
       });
       if (!res.ok) throw new Error("Error deleting store.");
       setStores((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleModerate = async (id, action) => {
+    const label = action === "approve" ? "approve" : "reject";
+    if (!window.confirm(`Are you sure you want to ${label} this submission?`))
+      return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/api/stores/${id}/${action}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mesaj || "Action failed.");
+      setPendingStores((prev) => prev.filter((s) => s.id !== id));
+      if (action === "approve") {
+        await refreshStores();
+      }
     } catch (err) {
       alert(err.message);
     }
@@ -179,6 +223,62 @@ export default function AdminDashboard() {
           onSearchChange={setSearchQuery}
           placeholder="Search shops..."
         />
+        {/* Pending business submissions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="font-bold text-gray-800 text-lg">
+              Pending submissions
+              <span className="ml-2 text-sm font-normal text-gray-400">
+                ({pendingStores.length})
+              </span>
+            </h3>
+          </div>
+
+          {pendingLoading ? (
+            <div className="p-6 text-center text-gray-400">Loading...</div>
+          ) : pendingStores.length === 0 ? (
+            <div className="p-6 text-center text-gray-400">
+              No pending submissions.
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {pendingStores.map((store) => (
+                <li
+                  key={store.id}
+                  className="px-6 py-4 flex items-center justify-between gap-4"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-800 truncate">
+                      {store.name}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {store.address}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleModerate(store.id, "approve")}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleModerate(store.id, "reject")}
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="font-bold text-gray-800 text-lg">Shops</h3>
+          </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
