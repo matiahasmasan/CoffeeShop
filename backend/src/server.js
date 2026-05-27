@@ -115,6 +115,18 @@ const generateToken = (user) => {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
+// Audit log helper — fire-and-forget. If the insert fails we log but never
+// fail the surrounding request (the points change has already been applied).
+const logTransaction = ({ userId, storeId, baristaId, type, points }) => {
+  const sql = `
+    INSERT INTO transactions (user_id, store_id, barista_id, type, points)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  con.query(sql, [userId, storeId, baristaId, type, points], (err) => {
+    if (err) console.error("[transactions] insert:", err);
+  });
+};
+
 async function hashPassword(password) {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
@@ -868,6 +880,192 @@ app.get("/api/users", verifyToken, (req, res) => {
   });
 });
 
+// Per-barista dashboard stats — today's counters + last 5 actions for the
+// logged-in barista (or owner, who shares the same role check pattern).
+app.get("/api/barista/stats", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const baristaId = req.user.id;
+
+  const countsSql = `
+    SELECT
+      COUNT(*) AS scansToday,
+      COALESCE(SUM(CASE WHEN type = 'earn'   THEN points ELSE 0 END), 0) AS pointsToday,
+      COALESCE(SUM(CASE WHEN type = 'redeem' THEN 1      ELSE 0 END), 0) AS rewardsToday
+    FROM transactions
+    WHERE barista_id = ? AND DATE(created_at) = CURDATE()
+  `;
+
+  con.query(countsSql, [baristaId], (countsErr, countsRows) => {
+    if (countsErr) {
+      console.error("[barista/stats] counts:", countsErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    const c = countsRows[0] || {};
+
+    const recentSql = `
+      SELECT
+        t.id, t.type, t.points, t.created_at,
+        cu.firstName AS customerFirstName,
+        cu.lastName  AS customerLastName
+      FROM transactions t
+      LEFT JOIN users cu ON cu.id = t.user_id
+      WHERE t.barista_id = ?
+      ORDER BY t.created_at DESC, t.id DESC
+      LIMIT 5
+    `;
+    con.query(recentSql, [baristaId], (recentErr, recent) => {
+      if (recentErr) {
+        console.error("[barista/stats] recent:", recentErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      res.json({
+        scansToday: Number(c.scansToday) || 0,
+        pointsToday: Number(c.pointsToday) || 0,
+        rewardsToday: Number(c.rewardsToday) || 0,
+        recent,
+      });
+    });
+  });
+});
+
+// Store-wide dashboard stats — today's counters + last 5 actions across all
+// staff at the caller's store. Used by OwnerDashboard.
+app.get("/api/store/stats", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+    const storeId = staffRows[0].store_id;
+
+    const countsSql = `
+      SELECT
+        COUNT(*) AS scansToday,
+        COALESCE(SUM(CASE WHEN type = 'earn'   THEN points ELSE 0 END), 0) AS pointsToday,
+        COALESCE(SUM(CASE WHEN type = 'redeem' THEN 1      ELSE 0 END), 0) AS rewardsToday
+      FROM transactions
+      WHERE store_id = ? AND DATE(created_at) = CURDATE()
+    `;
+
+    con.query(countsSql, [storeId], (countsErr, countsRows) => {
+      if (countsErr) {
+        console.error("[store/stats] counts:", countsErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      const c = countsRows[0] || {};
+
+      const recentSql = `
+        SELECT
+          t.id, t.type, t.points, t.created_at,
+          cu.firstName AS customerFirstName,
+          cu.lastName  AS customerLastName,
+          bu.firstName AS baristaFirstName,
+          bu.lastName  AS baristaLastName
+        FROM transactions t
+        LEFT JOIN users cu ON cu.id = t.user_id
+        LEFT JOIN users bu ON bu.id = t.barista_id
+        WHERE t.store_id = ?
+        ORDER BY t.created_at DESC, t.id DESC
+        LIMIT 5
+      `;
+      con.query(recentSql, [storeId], (recentErr, recent) => {
+        if (recentErr) {
+          console.error("[store/stats] recent:", recentErr);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+        res.json({
+          scansToday: Number(c.scansToday) || 0,
+          pointsToday: Number(c.pointsToday) || 0,
+          rewardsToday: Number(c.rewardsToday) || 0,
+          recent,
+        });
+      });
+    });
+  });
+});
+
+// Store-scoped transactions — owners (role 3) and baristas (role 4) see every
+// earn/redeem at the store they're assigned to via store_staff.
+app.get("/api/store/transactions", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+    const storeId = staffRows[0].store_id;
+
+    const sql = `
+      SELECT
+        t.id, t.type, t.points, t.created_at,
+        t.user_id,
+        cu.firstName AS customerFirstName,
+        cu.lastName  AS customerLastName,
+        t.barista_id,
+        bu.firstName AS baristaFirstName,
+        bu.lastName  AS baristaLastName
+      FROM transactions t
+      LEFT JOIN users cu ON cu.id = t.user_id
+      LEFT JOIN users bu ON bu.id = t.barista_id
+      WHERE t.store_id = ?
+      ORDER BY t.created_at DESC, t.id DESC
+    `;
+    con.query(sql, [storeId], (err, rows) => {
+      if (err) {
+        console.error("[store/transactions]", err);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      res.json(rows);
+    });
+  });
+});
+
+// Admin — list all point transactions (earns + redemptions) with joined names.
+app.get("/api/admin/transactions", verifyToken, (req, res) => {
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+
+  const sql = `
+    SELECT
+      t.id, t.type, t.points, t.created_at,
+      t.user_id,
+      cu.firstName  AS customerFirstName,
+      cu.lastName   AS customerLastName,
+      t.store_id,
+      s.name        AS storeName,
+      t.barista_id,
+      bu.firstName  AS baristaFirstName,
+      bu.lastName   AS baristaLastName
+    FROM transactions t
+    LEFT JOIN users  cu ON cu.id = t.user_id
+    LEFT JOIN stores s  ON s.id  = t.store_id
+    LEFT JOIN users  bu ON bu.id = t.barista_id
+    ORDER BY t.created_at DESC, t.id DESC
+  `;
+  con.query(sql, (err, rows) => {
+    if (err) {
+      console.error("[admin/transactions]", err);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    res.json(rows);
+  });
+});
+
 app.post("/api/store-staff", verifyToken, (req, res) => {
   if (req.user.role !== 1) {
     return res.status(403).json({ mesaj: "Acces interzis." });
@@ -1238,6 +1436,14 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
             return res.status(500).json({ mesaj: "Eroare la server" });
           }
 
+          logTransaction({
+            userId: parsedCustomerUserId,
+            storeId,
+            baristaId: req.user.id,
+            type: "earn",
+            points: parsedPoints,
+          });
+
           const resultSql = `
             SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
             FROM loyalty_cards lc
@@ -1359,6 +1565,14 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
             (updateErr) => {
               if (updateErr)
                 return res.status(500).json({ mesaj: "Eroare la server" });
+
+              logTransaction({
+                userId: parsedCustomerUserId,
+                storeId,
+                baristaId: req.user.id,
+                type: "redeem",
+                points: rewardThreshold,
+              });
 
               return res.json({
                 succes: true,
@@ -1940,6 +2154,55 @@ app.put("/api/owner/menu/:id", verifyToken, (req, res) => {
         });
       },
     );
+  });
+});
+
+// DELETE /api/owner/menu/:id - Delete a menu item
+app.delete("/api/owner/menu/:id", verifyToken, (req, res) => {
+  const { id } = req.params;
+  const { store_id } = req.user;
+
+  const parsedId = Number(id);
+  if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    return res.status(400).json({ mesaj: "Item ID invalid." });
+  }
+
+  // Check if item belongs to owner's store
+  const checkSql = `
+    SELECT mi.id, mi.store_id
+    FROM menu_items mi
+    WHERE mi.id = ? AND mi.store_id = ?
+    LIMIT 1
+  `;
+
+  con.query(checkSql, [parsedId, store_id], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error("[menu delete] check error:", checkErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+
+    if (!checkResults.length) {
+      return res
+        .status(404)
+        .json({ mesaj: "Item not found or access denied." });
+    }
+
+    const deleteSql = `
+      DELETE FROM menu_items
+      WHERE id = ? AND store_id = ?
+    `;
+
+    con.query(deleteSql, [parsedId, store_id], (deleteErr) => {
+      if (deleteErr) {
+        console.error("[menu delete] delete error:", deleteErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+
+      res.json({
+        succes: true,
+        mesaj: "Produs șters cu succes.",
+      });
+    });
   });
 });
 

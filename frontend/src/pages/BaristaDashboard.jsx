@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
-  faHouse,
   faQrcode,
-  faArrowRightArrowLeft,
   faMugHot,
   faClipboard,
   faCheck,
@@ -12,18 +10,9 @@ import {
 import Sidebar from "../components/Sidebar";
 import QrScannerModal from "../components/QrScannerModal";
 import ToastMessage from "../components/ToastMessage";
+import { BARISTA_LINKS } from "../constants/baristaLinks";
 
 const API = import.meta.env.VITE_API_URL;
-
-const BARISTA_LINKS = [
-  { label: "Home", icon: faHouse, path: "/barista-dashboard" },
-  { label: "Scan QR", icon: faQrcode, path: "/barista/scan" },
-  {
-    label: "Transactions",
-    icon: faArrowRightArrowLeft,
-    path: "/barista/transactions",
-  },
-];
 
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -52,6 +41,29 @@ export default function BaristaDashboard() {
   const [storePointsThreshold, setStorePointsThreshold] = useState(null);
   const [manualCode, setManualCode] = useState("");
   const resultRef = useRef(null);
+
+  // ── Dashboard stats ───────────────────────────────────────────────────────
+  const [stats, setStats] = useState({
+    scansToday: 0,
+    pointsToday: 0,
+    rewardsToday: 0,
+    recent: [],
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const fetchStats = () => {
+    fetch(`${API}/api/barista/stats`, { headers: authHeader() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setStats(d);
+      })
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const handleManualSubmit = (mode) => {
     const trimmed = manualCode.trim().toUpperCase();
@@ -170,6 +182,7 @@ export default function BaristaDashboard() {
       setToastMessage(
         `You have added ${data.pointsAdded} points to ${data.clientName}. Now ${data.clientName} has ${data.pointsNow} points at ${data.storeName}.`,
       );
+      fetchStats();
     } catch (err) {
       setScanResult(err.message || "Could not add points.");
     } finally {
@@ -200,6 +213,7 @@ export default function BaristaDashboard() {
       setToastMessage(
         `${data.clientName} has redeemed a free coffee! Remaining points: ${data.pointsRemaining}`,
       );
+      fetchStats();
     } catch (err) {
       setScanResult(err.message || "Could not redeem reward.");
     } finally {
@@ -477,38 +491,95 @@ export default function BaristaDashboard() {
           </div>
         )}
 
-        {/* Stats placeholder */}
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
             <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold">
               Scans today
             </p>
-            <p className="text-2xl font-semibold text-gray-800 mt-1">—</p>
+            <p className="text-2xl font-semibold text-gray-800 mt-1">
+              {statsLoading ? "—" : stats.scansToday}
+            </p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
             <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold">
               Points given
             </p>
-            <p className="text-2xl font-semibold text-gray-800 mt-1">—</p>
+            <p className="text-2xl font-semibold text-gray-800 mt-1">
+              {statsLoading ? "—" : stats.pointsToday}
+            </p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 col-span-2 sm:col-span-1">
             <p className="text-xs uppercase tracking-wide text-gray-400 font-semibold">
               Rewards claimed
             </p>
-            <p className="text-2xl font-semibold text-gray-800 mt-1">—</p>
+            <p className="text-2xl font-semibold text-gray-800 mt-1">
+              {statsLoading ? "—" : stats.rewardsToday}
+            </p>
           </div>
         </div>
 
-        {/* Recent activity placeholder */}
+        {/* Recent activity */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100">
             <h4 className="text-sm font-semibold text-gray-800">
               Recent activity
             </h4>
           </div>
-          <div className="flex justify-center items-center py-12 text-gray-400 text-sm">
-            No activity yet.
-          </div>
+          {statsLoading ? (
+            <div className="flex justify-center items-center py-12 text-gray-400 text-sm">
+              Loading...
+            </div>
+          ) : stats.recent.length === 0 ? (
+            <div className="flex justify-center items-center py-12 text-gray-400 text-sm">
+              No activity yet.
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {stats.recent.map((t) => {
+                const isEarn = t.type === "earn";
+                const customer =
+                  [t.customerFirstName, t.customerLastName]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || (t.user_id ? `#${t.user_id}` : "—");
+                const when = new Date(t.created_at);
+                const whenLabel = Number.isNaN(when.getTime())
+                  ? ""
+                  : when.toLocaleString();
+                return (
+                  <li
+                    key={t.id}
+                    className="flex items-center gap-3 px-5 py-3"
+                  >
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                        isEarn
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
+                      }`}
+                    >
+                      {isEarn ? "Earn" : "Redeem"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {customer}
+                      </p>
+                      <p className="text-xs text-gray-400">{whenLabel}</p>
+                    </div>
+                    <span
+                      className={`font-mono text-sm shrink-0 ${
+                        isEarn ? "text-emerald-700" : "text-amber-700"
+                      }`}
+                    >
+                      {isEarn ? "+" : "−"}
+                      {t.points}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </main>
       <ToastMessage message={toastMessage} visible={Boolean(toastMessage)} />

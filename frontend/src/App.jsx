@@ -38,7 +38,10 @@ import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import AdminTransactions from "./pages/AdminTransactions.jsx";
+import StoreTransactions from "./pages/StoreTransactions.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
+import OwnerBaristas from "./pages/OwnerBaristas.jsx";
 import OwnerMenu from "./pages/OwnerMenu.jsx";
 import BaristaDashboard from "./pages/BaristaDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
@@ -73,10 +76,26 @@ function App() {
           }
         />
         <Route
+          path="/owner/baristas"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <OwnerBaristas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/owner/menu"
           element={
             <ProtectedRoute allowedRoles={[3]}>
               <OwnerMenu />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <StoreTransactions />
             </ProtectedRoute>
           }
         />
@@ -86,6 +105,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[4]}>
               <BaristaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/barista/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[4]}>
+              <StoreTransactions />
             </ProtectedRoute>
           }
         />
@@ -163,6 +190,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[1]}>
               <AddStore />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <AdminTransactions />
             </ProtectedRoute>
           }
         />
