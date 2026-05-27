@@ -7,6 +7,7 @@ import { OWNER_LINKS } from "../constants/ownerLinks";
 import { BARISTA_LINKS } from "../constants/baristaLinks";
 
 const API = import.meta.env.VITE_API_URL;
+const PAGE_SIZE = 5;
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
@@ -35,6 +36,11 @@ export default function StoreTransactions() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (!user?.store_id) return;
@@ -72,6 +78,13 @@ export default function StoreTransactions() {
       (t.type || "").toLowerCase().includes(q)
     );
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -156,7 +169,7 @@ export default function StoreTransactions() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filtered.map((t) => {
+                  {pageRows.map((t) => {
                     const customer =
                       fullName(t.customerFirstName, t.customerLastName) ||
                       (t.user_id ? `#${t.user_id}` : "—");
@@ -201,6 +214,32 @@ export default function StoreTransactions() {
                   })}
                 </tbody>
               </table>
+              <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3 text-sm">
+                <span className="text-gray-500">
+                  Page {safePage} of {totalPages}{" "}
+                  <span className="text-gray-400">
+                    · {filtered.length} total
+                  </span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage <= 1}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() =>
+                      setPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={safePage >= totalPages}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

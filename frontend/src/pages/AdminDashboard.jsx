@@ -11,7 +11,7 @@ const API = import.meta.env.VITE_API_URL;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
       setUser(storedUser);
     }
   }, [navigate]);
-// test
+  // test
   const refreshStores = async () => {
     const { stores } = await getCards({ limit: 1000 });
     setStores(stores);
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
   const PRIMARY_KEYS = ["id", "name", "address"];
 
   const filteredStores = stores.filter((store) =>
-    (store.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (store.name || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -189,9 +189,7 @@ export default function AdminDashboard() {
       />
 
       <header className="bg-white shadow-sm h-16 flex items-center justify-between px-6">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Admin Dashboard
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800">Admin Dashboard</h2>
         <button
           onClick={() => setSidebarOpen(true)}
           className="text-gray-500 hover:text-gray-800 transition-colors"
@@ -275,11 +273,6 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="font-bold text-gray-800 text-lg">Shops</h3>
-          </div>
-
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-16 text-gray-400 text-sm">
@@ -287,7 +280,9 @@ export default function AdminDashboard() {
             </div>
           ) : filteredStores.length === 0 ? (
             <div className="flex justify-center items-center py-16 text-gray-400 text-sm">
-              {searchQuery ? "No shops match your search." : "No existing shops."}
+              {searchQuery
+                ? "No shops match your search."
+                : "No existing shops."}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -392,7 +387,9 @@ export default function AdminDashboard() {
                                 onClick={() => {
                                   setManagingStoreId(store.id);
                                   setSelectedUserId(
-                                    store.owner_id ? String(store.owner_id) : "",
+                                    store.owner_id
+                                      ? String(store.owner_id)
+                                      : "",
                                   );
                                 }}
                                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
