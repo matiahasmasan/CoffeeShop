@@ -1,6 +1,7 @@
 import {
   faHouse,
   faArrowRightArrowLeft,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
 
 export const ADMIN_LINKS = [
@@ -10,4 +11,5 @@ export const ADMIN_LINKS = [
     icon: faArrowRightArrowLeft,
     path: "/admin/transactions",
   },
+  { label: "Settings", icon: faGear, path: "/admin/settings" },
 ];

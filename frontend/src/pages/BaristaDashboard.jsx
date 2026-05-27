@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
-  faHouse,
   faQrcode,
-  faArrowRightArrowLeft,
   faMugHot,
   faClipboard,
   faCheck,
@@ -12,18 +10,9 @@ import {
 import Sidebar from "../components/Sidebar";
 import QrScannerModal from "../components/QrScannerModal";
 import ToastMessage from "../components/ToastMessage";
+import { BARISTA_LINKS } from "../constants/baristaLinks";
 
 const API = import.meta.env.VITE_API_URL;
-
-const BARISTA_LINKS = [
-  { label: "Home", icon: faHouse, path: "/barista-dashboard" },
-  { label: "Scan QR", icon: faQrcode, path: "/barista/scan" },
-  {
-    label: "Transactions",
-    icon: faArrowRightArrowLeft,
-    path: "/barista/transactions",
-  },
-];
 
 const authHeader = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,

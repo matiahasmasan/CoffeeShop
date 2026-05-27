@@ -39,6 +39,7 @@ import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AdminTransactions from "./pages/AdminTransactions.jsx";
+import StoreTransactions from "./pages/StoreTransactions.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
 import OwnerMenu from "./pages/OwnerMenu.jsx";
 import BaristaDashboard from "./pages/BaristaDashboard.jsx";
@@ -80,12 +81,28 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/owner/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <StoreTransactions />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/barista-dashboard"
           element={
             <ProtectedRoute allowedRoles={[4]}>
               <BaristaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/barista/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[4]}>
+              <StoreTransactions />
             </ProtectedRoute>
           }
         />

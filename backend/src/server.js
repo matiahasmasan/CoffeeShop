@@ -559,6 +559,47 @@ app.get("/api/users", verifyToken, (req, res) => {
   });
 });
 
+// Store-scoped transactions — owners (role 3) and baristas (role 4) see every
+// earn/redeem at the store they're assigned to via store_staff.
+app.get("/api/store/transactions", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+    const storeId = staffRows[0].store_id;
+
+    const sql = `
+      SELECT
+        t.id, t.type, t.points, t.created_at,
+        t.user_id,
+        cu.firstName AS customerFirstName,
+        cu.lastName  AS customerLastName,
+        t.barista_id,
+        bu.firstName AS baristaFirstName,
+        bu.lastName  AS baristaLastName
+      FROM transactions t
+      LEFT JOIN users cu ON cu.id = t.user_id
+      LEFT JOIN users bu ON bu.id = t.barista_id
+      WHERE t.store_id = ?
+      ORDER BY t.created_at DESC, t.id DESC
+    `;
+    con.query(sql, [storeId], (err, rows) => {
+      if (err) {
+        console.error("[store/transactions]", err);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      res.json(rows);
+    });
+  });
+});
+
 // Admin — list all point transactions (earns + redemptions) with joined names.
 app.get("/api/admin/transactions", verifyToken, (req, res) => {
   if (req.user.role !== 1) {
