@@ -115,6 +115,18 @@ const generateToken = (user) => {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
+// Audit log helper — fire-and-forget. If the insert fails we log but never
+// fail the surrounding request (the points change has already been applied).
+const logTransaction = ({ userId, storeId, baristaId, type, points }) => {
+  const sql = `
+    INSERT INTO transactions (user_id, store_id, barista_id, type, points)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  con.query(sql, [userId, storeId, baristaId, type, points], (err) => {
+    if (err) console.error("[transactions] insert:", err);
+  });
+};
+
 async function hashPassword(password) {
   const saltRounds = 10;
   return await bcrypt.hash(password, saltRounds);
@@ -547,6 +559,38 @@ app.get("/api/users", verifyToken, (req, res) => {
   });
 });
 
+// Admin — list all point transactions (earns + redemptions) with joined names.
+app.get("/api/admin/transactions", verifyToken, (req, res) => {
+  if (req.user.role !== 1) {
+    return res.status(403).json({ mesaj: "Acces interzis." });
+  }
+
+  const sql = `
+    SELECT
+      t.id, t.type, t.points, t.created_at,
+      t.user_id,
+      cu.firstName  AS customerFirstName,
+      cu.lastName   AS customerLastName,
+      t.store_id,
+      s.name        AS storeName,
+      t.barista_id,
+      bu.firstName  AS baristaFirstName,
+      bu.lastName   AS baristaLastName
+    FROM transactions t
+    LEFT JOIN users  cu ON cu.id = t.user_id
+    LEFT JOIN stores s  ON s.id  = t.store_id
+    LEFT JOIN users  bu ON bu.id = t.barista_id
+    ORDER BY t.created_at DESC, t.id DESC
+  `;
+  con.query(sql, (err, rows) => {
+    if (err) {
+      console.error("[admin/transactions]", err);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    res.json(rows);
+  });
+});
+
 app.post("/api/store-staff", verifyToken, (req, res) => {
   if (req.user.role !== 1) {
     return res.status(403).json({ mesaj: "Acces interzis." });
@@ -917,6 +961,14 @@ app.post("/api/barista/points/add", verifyToken, (req, res) => {
             return res.status(500).json({ mesaj: "Eroare la server" });
           }
 
+          logTransaction({
+            userId: parsedCustomerUserId,
+            storeId,
+            baristaId: req.user.id,
+            type: "earn",
+            points: parsedPoints,
+          });
+
           const resultSql = `
             SELECT lc.points, lc.total_points_earned, u.firstName, u.lastName
             FROM loyalty_cards lc
@@ -1038,6 +1090,14 @@ app.post("/api/barista/reward/redeem", verifyToken, (req, res) => {
             (updateErr) => {
               if (updateErr)
                 return res.status(500).json({ mesaj: "Eroare la server" });
+
+              logTransaction({
+                userId: parsedCustomerUserId,
+                storeId,
+                baristaId: req.user.id,
+                type: "redeem",
+                points: rewardThreshold,
+              });
 
               return res.json({
                 succes: true,

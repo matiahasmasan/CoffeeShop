@@ -38,6 +38,7 @@ import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import CardDetail from "./pages/CardDetail";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import AdminTransactions from "./pages/AdminTransactions.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
 import OwnerMenu from "./pages/OwnerMenu.jsx";
 import BaristaDashboard from "./pages/BaristaDashboard.jsx";
@@ -153,6 +154,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[1]}>
               <AddStore />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/transactions"
+          element={
+            <ProtectedRoute allowedRoles={[1]}>
+              <AdminTransactions />
             </ProtectedRoute>
           }
         />
