@@ -559,6 +559,57 @@ app.get("/api/users", verifyToken, (req, res) => {
   });
 });
 
+// Per-barista dashboard stats — today's counters + last 5 actions for the
+// logged-in barista (or owner, who shares the same role check pattern).
+app.get("/api/barista/stats", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const baristaId = req.user.id;
+
+  const countsSql = `
+    SELECT
+      COUNT(*) AS scansToday,
+      COALESCE(SUM(CASE WHEN type = 'earn'   THEN points ELSE 0 END), 0) AS pointsToday,
+      COALESCE(SUM(CASE WHEN type = 'redeem' THEN 1      ELSE 0 END), 0) AS rewardsToday
+    FROM transactions
+    WHERE barista_id = ? AND DATE(created_at) = CURDATE()
+  `;
+
+  con.query(countsSql, [baristaId], (countsErr, countsRows) => {
+    if (countsErr) {
+      console.error("[barista/stats] counts:", countsErr);
+      return res.status(500).json({ mesaj: "Eroare la server" });
+    }
+    const c = countsRows[0] || {};
+
+    const recentSql = `
+      SELECT
+        t.id, t.type, t.points, t.created_at,
+        cu.firstName AS customerFirstName,
+        cu.lastName  AS customerLastName
+      FROM transactions t
+      LEFT JOIN users cu ON cu.id = t.user_id
+      WHERE t.barista_id = ?
+      ORDER BY t.created_at DESC, t.id DESC
+      LIMIT 5
+    `;
+    con.query(recentSql, [baristaId], (recentErr, recent) => {
+      if (recentErr) {
+        console.error("[barista/stats] recent:", recentErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      res.json({
+        scansToday: Number(c.scansToday) || 0,
+        pointsToday: Number(c.pointsToday) || 0,
+        rewardsToday: Number(c.rewardsToday) || 0,
+        recent,
+      });
+    });
+  });
+});
+
 // Store-scoped transactions — owners (role 3) and baristas (role 4) see every
 // earn/redeem at the store they're assigned to via store_staff.
 app.get("/api/store/transactions", verifyToken, (req, res) => {
