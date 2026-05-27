@@ -41,6 +41,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AdminTransactions from "./pages/AdminTransactions.jsx";
 import StoreTransactions from "./pages/StoreTransactions.jsx";
 import OwnerDashboard from "./pages/OwnerDashboard.jsx";
+import OwnerBaristas from "./pages/OwnerBaristas.jsx";
 import OwnerMenu from "./pages/OwnerMenu.jsx";
 import BaristaDashboard from "./pages/BaristaDashboard.jsx";
 import AddStore from "./pages/AddStore.jsx";
@@ -71,6 +72,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={[3]}>
               <OwnerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/owner/baristas"
+          element={
+            <ProtectedRoute allowedRoles={[3]}>
+              <OwnerBaristas />
             </ProtectedRoute>
           }
         />

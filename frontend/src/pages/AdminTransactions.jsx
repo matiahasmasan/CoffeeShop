@@ -165,7 +165,10 @@ export default function AdminTransactions() {
                       (t.barista_id ? `#${t.barista_id}` : "—");
                     const isEarn = t.type === "earn";
                     return (
-                      <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={t.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-5 py-3 text-gray-500 font-mono text-xs">
                           {t.id}
                         </td>
@@ -201,32 +204,6 @@ export default function AdminTransactions() {
                   })}
                 </tbody>
               </table>
-              <div className="flex items-center justify-between border-t border-gray-200 px-5 py-3 text-sm">
-                <span className="text-gray-500">
-                  Page {safePage} of {totalPages}{" "}
-                  <span className="text-gray-400">
-                    · {filtered.length} total
-                  </span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={safePage <= 1}
-                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={safePage >= totalPages}
-                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </div>

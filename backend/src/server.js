@@ -931,6 +931,68 @@ app.get("/api/barista/stats", verifyToken, (req, res) => {
   });
 });
 
+// Store-wide dashboard stats — today's counters + last 5 actions across all
+// staff at the caller's store. Used by OwnerDashboard.
+app.get("/api/store/stats", verifyToken, (req, res) => {
+  if (req.user.role !== 3 && req.user.role !== 4) {
+    return res.status(403).json({ mesaj: "Nu ai permisiunea necesara." });
+  }
+
+  const staffStoreSql =
+    "SELECT store_id FROM store_staff WHERE user_id = ? LIMIT 1";
+  con.query(staffStoreSql, [req.user.id], (staffErr, staffRows) => {
+    if (staffErr) return res.status(500).json({ mesaj: "Eroare la server" });
+    if (!staffRows.length) {
+      return res.status(403).json({ mesaj: "Nu esti asignat unui magazin." });
+    }
+    const storeId = staffRows[0].store_id;
+
+    const countsSql = `
+      SELECT
+        COUNT(*) AS scansToday,
+        COALESCE(SUM(CASE WHEN type = 'earn'   THEN points ELSE 0 END), 0) AS pointsToday,
+        COALESCE(SUM(CASE WHEN type = 'redeem' THEN 1      ELSE 0 END), 0) AS rewardsToday
+      FROM transactions
+      WHERE store_id = ? AND DATE(created_at) = CURDATE()
+    `;
+
+    con.query(countsSql, [storeId], (countsErr, countsRows) => {
+      if (countsErr) {
+        console.error("[store/stats] counts:", countsErr);
+        return res.status(500).json({ mesaj: "Eroare la server" });
+      }
+      const c = countsRows[0] || {};
+
+      const recentSql = `
+        SELECT
+          t.id, t.type, t.points, t.created_at,
+          cu.firstName AS customerFirstName,
+          cu.lastName  AS customerLastName,
+          bu.firstName AS baristaFirstName,
+          bu.lastName  AS baristaLastName
+        FROM transactions t
+        LEFT JOIN users cu ON cu.id = t.user_id
+        LEFT JOIN users bu ON bu.id = t.barista_id
+        WHERE t.store_id = ?
+        ORDER BY t.created_at DESC, t.id DESC
+        LIMIT 5
+      `;
+      con.query(recentSql, [storeId], (recentErr, recent) => {
+        if (recentErr) {
+          console.error("[store/stats] recent:", recentErr);
+          return res.status(500).json({ mesaj: "Eroare la server" });
+        }
+        res.json({
+          scansToday: Number(c.scansToday) || 0,
+          pointsToday: Number(c.pointsToday) || 0,
+          rewardsToday: Number(c.rewardsToday) || 0,
+          recent,
+        });
+      });
+    });
+  });
+});
+
 // Store-scoped transactions — owners (role 3) and baristas (role 4) see every
 // earn/redeem at the store they're assigned to via store_staff.
 app.get("/api/store/transactions", verifyToken, (req, res) => {
